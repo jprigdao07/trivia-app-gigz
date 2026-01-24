@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="build/static/css/main.05e87ef5.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <title>Quizzes</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #fff;
+      margin: 0;
+      padding: 16px;
+    }
+  
+  </style>
+</head>
+<body>
+
+    <header class="top-nav">
+      <div class="logo-container">
+        <img src="logo_gradient.png" alt="Company Logo" class="logo" />
+      </div>
+      <nav class="nav-links">
+        <a href="dashboard.html">Home</a>
+        <a href="questionstab.html">Questions</a>
+        <a href="quizzes.html" class="active">Quizzes</a>
+        <a href="#">Users</a>
+        <a href="#">Venues</a>
+        <a href="#">Hosts</a>
+        <a href="#">Billing</a>
+        <a href="#">Analytics</a>
+      </nav>
+      <button class="sign-out">Sign Out</button>
+    </header>
+
+<section class="quiz-container" id="quiz-container">
+ <section class="a-sec">
+ <div class="top-row" style="display: flex; flex-wrap: wrap;">
+  <div class="box left-box">
+    <!-- <div class="heading">Scheduling Options</div> -->
+    <div class="row">
+      <div class="options">
+        <div class="select-day" style="align-items: center;">
+              <label for="scheduledStart">Scheduled Start Time:</label>
+              <input type="datetime-local" id="day" class="answer-input" />
+
+  <input type="text" placeholder="Location" id="quizLocation" class="answer-input" style="width:100%; margin-bottom:3px;"><br>
+
+<!-- <strong>Scores</strong> -->
+<div id="scores-panel" class="scores" 
+     style="display: grid; grid-template-columns: 10px repeat(3, 1fr); gap: 30px; align-items: center;">
+<!-- <h3 style="margin-top: -10px;">Scoreboard</h3> -->
+<div id="scoresContainer"></div>
+  </div>
+  </div><br>
+  </div>
+</div>
+
+  <div id="quizList" class="left-panel" style="
+      width: 100%;
+      min-height: 140px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      overflow-y: auto;
+  ">
+      <!-- Quizzes populated by JS -->
+  </div>
+
+    <div class="button-boxes">
+      <!-- <button class="button" onclick="suggestQuiz()">Suggest A Quiz</button>
+        <input type="text" id="quizIdInput" class="input-suggest" placeholder="Quiz Round Number"> -->
+      <input type="text" class="input-suggest input-gen" id="gameIdInput" placeholder="Game ID" readonly><br>
+      <button id="generateNewQuizBtn" class="button btn-gen" style="padding: 20px;" onclick="generateNewQuiz()">Generate New Quiz</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="b-sec">
+    <div class="box right-box">
+        <div class="preview-box">
+          <p id="quizDetailsRoot"></p>   
+                  <div id="quizPreviewRoot" class="right-panel"></div>
+        </div>
+    </div>
+  </div>
+
+<!-- Add Modal -->
+<div id="addModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5); z-index:1000;">
+  <div class="modal-content" style="background:#fff; margin:10% auto; padding:20px; width:300px; border-radius:8px; position:relative;">
+    <h3>Add New Question</h3>
+
+    <!-- Question -->
+    <label for="addInput">Question:</label>
+    <input type="text" id="addInput" placeholder="Enter new question..." style="width:100%; padding:8px; margin-top:5px;" />
+
+    <!-- Answer -->
+    <label for="addAnswerInput" style="margin-top:10px; display:block;">Answer:</label>
+    <input type="text" id="addAnswerInput" placeholder="Enter correct answer..." style="width:100%; padding:8px; margin-top:5px;" />
+
+    <div style="margin-top:15px; text-align:right;">
+      <button onclick="saveQuestion()" class="button">Add</button>
+      <button onclick="closeModal()" class="button button-red">Cancel</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Edit Modal -->
+<div id="editModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5); z-index:1000;">
+  <div class="modal-content" style="background:#fff; margin:10% auto; padding:20px; width:300px; border-radius:8px; position:relative;">
+    <h3>Edit Question</h3>
+
+    <!-- Question Input -->
+    <label for="editInput">Question:</label>
+    <input type="text" id="editInput" style="width:100%; padding:8px; margin-top:5px;" />
+
+    <!-- Answer Input -->
+    <label for="editAnswerInput" style="margin-top:10px; display:block;">Answer:</label>
+    <input type="text" id="editAnswerInput" style="width:100%; padding:8px; margin-top:5px;" />
+
+    <div style="margin-top:15px; text-align:right;">
+      <button onclick="currentModalType='edit'; saveQuestion()" class="button">Save</button>
+      <button onclick="closeModal()" class="button button-red">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Assign Quiz Modal -->
+<div id="assignQuizModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
+    background-color: rgba(0,0,0,0.5); justify-content:center; align-items:center;">
+  <div style="background:#fff; margin:10% auto; padding:20px; width:400px; border-radius:8px; position:relative;">
+    <h3 id="modalQuizTitle">Assign Quiz</h3>
+    <label for="daySelect">Select Day:</label>
+    <select id="daySelect" class="answer-input" style="border: 1px solid black;">
+      <option value="Monday">Monday</option>
+      <option value="Tuesday">Tuesday</option>
+      <option value="Wednesday">Wednesday</option>
+      <option value="Thursday">Thursday</option>
+      <option value="Friday">Friday</option>
+      <option value="Saturday">Saturday</option>
+      <option value="Sunday">Sunday</option>
+    </select>
+    <div style="margin-top:15px; text-align:right;">
+      <button id="saveAssign" class="button">Save</button>
+      <button class="button" onclick="document.getElementById('assignQuizModal').style.display='none'">Cancel</button>
+    </div>
+  </div>
+</div>
+
+</section>
+</section>
+
+<div class="box bottom-box">
+  <div class="heading">Quiz Rounds and Questions</div>
+
+   <!-- Search and Action Buttons -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <input type="text" id="searchQuestions" placeholder="Search questions..." oninput="searchQuestions()" style="padding: 8px; width: 40%; border: 1px solid #ccc; border-radius: 5px;">
+    <div>
+      <button class="button" onclick="refreshAll()">Refresh All</button>
+      <button class="button" onclick="saveQuestion()">Add New Question</button>
+    </div>
+  </div>
+
+  <!-- Questions Table -->
+  <table style="width: 100%; border-collapse: collapse; text-align: left;">
+    <thead>
+      <tr>
+        <th>Round #</th>
+        <th>Category</th>
+        <th>Questions</th>
+        <th></th>
+        <!-- <th style="padding: 10px; border-bottom: 1px solid #ccc;"></th> -->
+      </tr>
+    </thead>
+    <tbody id="questionsTableBody">
+      <!-- Dynamic rows go here -->
+
+    </tbody>
+  </table>
+</div>  
+</div>
+
+<script>
+
+let socket;
+let quizActivated = false;
+
+// =============================================
+// ✅ FIXED: FETCH SCHEDULED START TIME
+// =============================================
+async function fetchScheduledStart(gameId) {
+  try {
+    const res = await fetch(`http://localhost:8080/api/latest-countdown?gameId=${gameId}`);
+    const data = await res.json();
+    if (!data.scheduledStart) return null;
+    return new Date(data.scheduledStart).getTime();
+  } catch (err) {
+    console.error("❌ Failed to fetch scheduled start time:", err);
+    return null;
+  }
+}
+
+// =============================================
+// 🚀 MAIN APP INIT
+// =============================================
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    // Load or request Game ID
+    const storedGameId = localStorage.getItem("currentGameId");
+    if (storedGameId) {
+      window.currentGameId = storedGameId;
+      console.log("🎲 Using stored Game ID:", window.currentGameId);
+    } else {
+      const res = await fetch("http://localhost:8080/api/get-latest-game-id");
+      const data = await res.json();
+      if (!data.id) {
+        console.warn("⚠️ No active game ID found on server.");
+        return;
+      }
+      window.currentGameId = data.id;
+      localStorage.setItem("currentGameId", data.id);
+      console.log("🎲 Joined latest game:", window.currentGameId);
+    }
+
+    // =============================================
+    // 🔌 CONNECT TO SOCKET.IO
+    // =============================================
+    socket = io("http://localhost:8080", {
+      auth: { role: "quiz", gameId: window.currentGameId },
+    });
+
+socket.on("connect", () => {
+  console.log("🎮 Quiz client connected:", socket.id);
+
+  // Correctly join game room
+  if (window.currentGameId) {
+    socket.emit("join_game_room", window.currentGameId);
+  }
+
+  // Join global room properly
+  socket.emit("join_game_room", "global");
+});
+
+    // =============================================
+// ⏱ FIXED: LISTEN TO 8080 SERVER BROADCAST
+// =============================================
+socket.on("start-countdown", ({ gameId, scheduledStart }) => {
+  console.log("🔥 TV RECEIVED start-countdown:", gameId, scheduledStart);
+
+  // Redirect only if we’re NOT skipping
+if (!window.location.href.includes("countdown")
+    && window.reactNavigateToCountdown !== "READY") {
+
+  window.location.href = `/quizzes_tab.html#/countdown?gameId=${gameId}`;
+}
+
+});
+
+    // =============================================
+    // 🎯 QUIZ SELECTED (controller)
+    // =============================================
+socket.on("controller:selected_quiz", async ({ gameId }) => {
+  console.log("🎯 Controller selected quiz:", gameId);
+  if (!gameId) return;
+
+  window.currentGameId = gameId;
+  localStorage.setItem("currentGameId", gameId);
+
+  // Join socket rooms
+  socket.emit("join_game_room", gameId);
+  socket.emit("join_game_room", "global");
+
+  // --- Wait until the quiz card exists in the DOM ---
+  const waitForCard = (gameId, maxRetries = 20) => new Promise((resolve, reject) => {
+    let tries = 0;
+    const check = async () => {
+      let card = document.querySelector(
+        `.quiz-card[data-id='${gameId}'], .quiz-card[data-quiz-id='${gameId}']`
+      );
+
+      // If card not found on first try, refresh the quiz list
+      if (!card && tries === 0 && typeof populateQuizList === "function") {
+        await populateQuizList();
+        card = document.querySelector(
+          `.quiz-card[data-id='${gameId}'], .quiz-card[data-quiz-id='${gameId}']`
+        );
+      }
+
+      if (card) return resolve(card);
+      if (++tries >= maxRetries) return reject("Quiz card not found after retries");
+      setTimeout(check, 200);
+    };
+    check();
+  });
+
+  try {
+    const quizCard = await waitForCard(gameId);
+
+    // Highlight the active quiz card
+    document.querySelectorAll('.quiz-card').forEach(card => card.classList.remove('active'));
+    quizCard.classList.add("active");
+
+    // Load the quiz content
+    if (typeof loadQuizById === "function") await loadQuizById(gameId);
+
+    // Auto-select card if the function exists
+    if (typeof autoSelectQuizCard === "function") autoSelectQuizCard(gameId);
+
+    // Fetch scheduled start and trigger countdown
+    const scheduled = await fetchScheduledStart(gameId);
+    if (scheduled && typeof startCountdownTimer === "function") startCountdownTimer(scheduled);
+
+    console.log("✅ Quiz UI updated for gameId:", gameId);
+
+  } catch (err) {
+    console.warn("⚠️ Could not auto-select quiz card immediately:", err);
+
+    // Optionally refresh the quiz list and retry after short delay
+    if (typeof populateQuizList === "function") {
+      await populateQuizList();
+      setTimeout(() => {
+        if (typeof autoSelectQuizCard === "function") autoSelectQuizCard(gameId);
+      }, 500);
+    }
+  }
+});
+
+    // =============================================
+    // ♻️ REFRESH QUIZ LIST
+    // =============================================
+    socket.on("controller:reload_quizzes", async (data) => {
+      console.log("♻️ Reload quizzes triggered:", data);
+      try {
+        if (typeof populateQuizList === "function") {
+          await populateQuizList();
+        }
+      } catch (err) {
+        console.error("❌ Failed to reload quizzes:", err);
+      }
+    });
+
+    // =============================================
+    // 🎯 ACTIVE QUIZ CHANGED FROM BACKEND
+    // =============================================
+    socket.on("latest-game-id-updated", async (data) => {
+      if (!data?.id) return;
+
+      if (data.id !== window.currentGameId) {
+        window.currentGameId = data.id;
+        localStorage.setItem("currentGameId", window.currentGameId);
+
+        socket.emit("join_game_room", window.currentGameId);
+        socket.emit("join_game_room", "global");
+
+        if (typeof loadQuizById === "function") {
+          await loadQuizById(data.id);
+        }
+
+        // auto countdown when switching tabs
+        const scheduled = await fetchScheduledStart(data.id);
+        if (scheduled) startCountdownTimer(scheduled);
+      }
+    });
+
+    // =============================================
+    // 🎉 NEW QUIZ GENERATED
+    // =============================================
+    socket.on("quiz:generate_new", async ({ gameId, scheduledStartAt }) => {
+      console.log("🧩 New quiz generated:", gameId, scheduledStartAt);
+
+      // =============================================
+// ✅ SET ACTIVE GAME TO BACKEND (REQUIRED)
+// =============================================
+try {
+  await fetch("http://localhost:8080/api/set-active-game", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      gameId,
+      scheduledStart: scheduledStartAt || null
+    })
+  });
+
+  console.log("🔥 Active game set on backend:", gameId);
+} catch (err) {
+  console.error("❌ Failed to set active game:", err);
+}
+
+
+      try {
+        if (typeof populateQuizList === "function") await populateQuizList();
+
+        // Wait for quiz card
+        const waitForCard = (gameId, maxRetries = 20) => {
+          return new Promise((resolve, reject) => {
+            let tries = 0;
+            const check = () => {
+              const card = document.querySelector(
+                `.quiz-card[data-id='${gameId}'], .quiz-card[data-quiz-id='${gameId}'], [data-game-id='${gameId}']`
+              );
+              if (card) return resolve(card);
+              if (++tries >= maxRetries) return reject("Quiz card not found");
+              setTimeout(check, 200);
+            };
+            check();
+          });
+        };
+
+        const quizCard = await waitForCard(gameId);
+        quizCard.classList.add("active");
+
+        window.currentGameId = gameId;
+        localStorage.setItem("currentGameId", gameId);
+        socket.emit("join_game_room", gameId);
+        socket.emit("join_game_room", "global");
+
+        // Determine start time
+        const scheduled =
+          scheduledStartAt ? new Date(scheduledStartAt).getTime() : null;
+
+        // Immediate countdown (if start time is now or past)
+        if (!scheduled || scheduled <= Date.now()) {
+          if (typeof startCountdownTimer === "function") {
+            startCountdownTimer(scheduled);
+          }
+        }
+
+        // Trigger countdown
+        if (scheduled && typeof startCountdownTimer === "function") {
+          startCountdownTimer(scheduled);
+        }
+
+        // Notify backend
+            socket.emit("controller:start_countdown", { gameId, scheduledStart: scheduled });
+
+      } catch (err) {
+        console.error("❌ Failed to handle new quiz:", err);
+      }
+    });
+
+// =============================================
+// ⏱ RECEIVE COUNTDOWN BROADCAST
+// =============================================
+socket.on("controller:start_countdown", ({ gameId, scheduledStart }) => {
+  console.log("🎯 Countdown event received:", gameId, scheduledStart);
+
+  // If Start Quiz is being triggered, DO NOT redirect to countdown
+  if (window.skipCountdown === true) {
+    console.log("⏭ Skipping countdown redirection (Start Quiz triggered)");
+    return;
+  }
+
+  // Normal behavior: redirect to countdown
+  if (typeof window.reactNavigateToCountdown === "function") {
+    console.log("➡️ Navigating React TV to CountdownPage...");
+    window.reactNavigateToCountdown(gameId);
+  } else {
+    if (!window.location.href.includes("countdown")) {
+      window.location.href = `/quizzes_tab.html#/countdown?gameId=${gameId}`;
+    }
+  }
+});
+
+
+  } catch (err) {
+    console.error("❌ Initialization failed:", err);
+  }
+
+  // Forward controller "start quiz" to React CountdownPage
+socket.on("quiz:start_now", ({ gameId }) => {
+  console.log("🎬 Legacy wrapper received START NOW for game", gameId);
+
+  // Set skipCountdown so redirect doesn't interfere
+  window.skipCountdown = true;
+
+  // Forward to React
+  if (window.triggerStartQuiz) {
+    window.triggerStartQuiz();
+  } else {
+    console.warn("⚠️ React CountdownPage not ready yet to start quiz");
+    // Retry after a short delay
+    const interval = setInterval(() => {
+      if (window.triggerStartQuiz) {
+        window.triggerStartQuiz();
+        clearInterval(interval);
+      }
+    }, 100);
+  }
+});
+
+});
+
+// =============================================
+// 🔍 AUTO SELECT QUIZ CARD
+// =============================================
+function autoSelectQuizCard(gameId) {
+  const selectors = [
+    `.quiz-card[data-id='${gameId}']`,
+    `.quiz-card[data-quiz-id='${gameId}']`,
+    `[data-game-id='${gameId}']`
+  ];
+
+  const findCard = () =>
+    selectors.map(sel => document.querySelector(sel)).find(Boolean);
+
+  let card = findCard();
+  if (card) {
+    card.click();
+    card.classList.add("active");
+    return;
+  }
+
+  let attempts = 0;
+  const interval = setInterval(() => {
+    card = findCard();
+    if (card) {
+      card.click();
+      card.classList.add("active");
+      clearInterval(interval);
+    } else if (++attempts >= 15) {
+      clearInterval(interval);
+      console.warn("⚠️ Could not find quiz card.");
+    }
+  }, 300);
+}
+
+</script>
+<script>
+
+  async function fetchQuizDetails(gameId) {
+  try {
+    const res = await fetch(`/api/quiz/${gameId}`);
+    const data = await res.json();
+    viewQuiz(data, gameId);
+  } catch (err) {
+    console.error('Error fetching quiz:', err);
+  }
+}
+
+function selectQuiz(quiz) {
+  fetch(`/api/quiz-details/${quiz.game_id}`)
+    .then(res => res.json())
+    .then(fullQuiz => {
+      console.log('Fetched quiz details:', fullQuiz);
+
+      document.getElementById('day').value = fullQuiz.day || '';
+      document.getElementById('quizLocation').value = fullQuiz.location || '';
+      // document.getElementById('teamAScore').value = fullQuiz.team_a_score || 0;
+      // document.getElementById('teamBScore').value = fullQuiz.team_b_score || 0;
+      // document.getElementById('teamCScore').value = fullQuiz.team_c_score || 0;
+
+      renderRounds(fullQuiz.rounds || []);
+    })
+    .catch(err => console.error('Error fetching quiz details:', err));
+}
+
+
+function loadQuizzes() {
+  fetch('/api/get-quizzes')
+    .then(res => res.json())
+    .then(quizzes => {
+      renderQuizList(quizzes);
+
+      const savedGameId = localStorage.getItem('selectedGameId');
+      let selectedQuiz = quizzes.find(q => q.game_id === savedGameId);
+
+      if (!selectedQuiz) {
+        // if no saved quiz, default to latest with rounds
+        selectedQuiz = quizzes.find(q => q.rounds_count > 0) || quizzes[0];
+      }
+
+      if (selectedQuiz) {
+        viewQuiz(selectedQuiz, selectedQuiz.game_id);
+      }
+    });
+}
+
+  async function fetchQuizDetails(gameId) {
+  try {
+    const response = await fetch(`/api/quizzes/${gameId}`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const quizDetails = await response.json();
+    console.log("✅ Loaded quiz details:", quizDetails);
+
+    viewQuiz(quizDetails, gameId);
+  } catch (err) {
+    console.error("❌ Failed to fetch quiz details:", err);
+  }
+}
+
+async function fetchAndRenderQuizzes() {
+  try {
+    const response = await fetch('/api/quizzes');
+    if (!response.ok) throw new Error("❌ Failed to fetch quizzes");
+
+    const quizzes = await response.json();
+
+    if (!Array.isArray(quizzes)) {
+      console.error("❌ Expected an array but got:", quizzes);
+      return;
+    }
+
+    // ✅ Sort: quizzes with rounds first
+    quizzes.sort((a, b) => {
+      const aHasRounds = Array.isArray(a.rounds) && a.rounds.length > 0;
+      const bHasRounds = Array.isArray(b.rounds) && b.rounds.length > 0;
+      return (bHasRounds - aHasRounds);
+    });
+
+    renderQuizList(quizzes);
+  } catch (err) {
+    console.error("❌ Failed to fetch quizzes", err);
+  }
+}
+
+function renderQuizList(quizzes) {
+  const container = document.getElementById("quizList");
+  if (!container) return;
+
+  container.innerHTML = ""; // Clear previous list
+
+  quizzes.forEach((quiz) => {
+    const quizDiv = document.createElement("div");
+    quizDiv.classList.add("quiz-card");
+    quizDiv.style.cursor = "pointer";
+    quizDiv.style.border = "1px solid #ccc";
+    quizDiv.style.padding = "1px";
+    quizDiv.style.margin = "8px 0";
+    quizDiv.style.borderRadius = "6px";
+    quizDiv.style.backgroundColor = "#fff";
+
+    // Title
+    const title = document.createElement("h3");
+    title.textContent = quiz.quiz_title || quiz.title || `Quiz #${quiz.id || "N/A"}`;
+    quizDiv.appendChild(title);
+
+    // Assign button
+    const button = document.createElement("button");
+    button.textContent = "Assign Quiz";
+    button.className = "assign-btn";
+    button.style.marginTop = "8px";
+
+    button.addEventListener("click", (e) => {
+      e.stopPropagation(); // prevent quizDiv click
+      assignQuiz(quiz.id);
+    });
+
+    quizDiv.appendChild(button);
+
+    // Clicking the card shows details
+    quizDiv.addEventListener("click", () => {
+      console.log("Clicked quiz:", quiz.id);
+      viewQuiz(quiz, quiz.id);
+    });
+
+    container.appendChild(quizDiv);
+  });
+}
+// ✅ Define viewQuiz globally
+async function viewQuiz(quiz, gameId) {
+  if (!quiz) {
+    console.warn('⚠️ No quiz details provided.');
+    return;
+  }
+
+  console.log("Clicked quiz:", quiz.quiz_title, quiz);
+
+  try {
+    // ✅ Fetch full quiz details including rounds
+    const response = await fetch(`/api/quiz/${gameId}`);
+    const quizDetails = await response.json();
+
+    console.log("Fetched quiz details:", quizDetails);
+
+    if (!quizDetails) {
+      console.warn("⚠️ No quiz details found.");
+      alert("No quiz details found.");
+      return;
+    }
+
+    // ✅ Fill input fields automatically
+    document.getElementById("quizLocation").value = quizDetails.location || "";
+    document.getElementById("day").value = quizDetails.day || "";
+    // document.getElementById("teamAScore").value = quizDetails.team_a_score ?? 0;
+    // document.getElementById("teamBScore").value = quizDetails.team_b_score ?? 0;
+    // document.getElementById("teamCScore").value = quizDetails.team_c_score ?? 0;
+
+    // ✅ Render rounds/questions in table if any
+    if (quizDetails.rounds && quizDetails.rounds.length > 0) {
+      renderQuizTableWithAnswers(quizDetails.rounds);
+    } else {
+      console.warn("⚠️ This quiz has no rounds.");
+      alert("This quiz has no rounds.");
+    }
+
+  } catch (err) {
+    console.error("❌ Failed to fetch quiz details:", err);
+    alert("Error loading quiz details.");
+  }
+}
+
+// Run on load
+fetchAndRenderQuizzes();
+
+
+ // ✅ Fetch quiz details from backend and pass to viewQuiz
+  async function fetchQuizDetails(gameId) {
+    try {
+      const response = await fetch(`/api/quizzes/${gameId}`);
+      const quizDetails = await response.json();
+      viewQuiz(quizDetails, gameId);
+    } catch (err) {
+      console.error("❌ Failed to fetch quiz details:", err);
+    }
+  }
+
+  // ✅ When quiz is clicked in the list
+// When user clicks a quiz
+function handleQuizClick(quiz) {
+  console.log('Clicked quiz:', quiz.quiz_title, quiz);
+  localStorage.setItem('selectedGameId', quiz.game_id); // ✅ save selection
+  viewQuiz(quiz, quiz.game_id);
+}
+
+</script>
+
+<script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const rootEl = document.getElementById("quizPreviewRoot");
+        if (!rootEl) return;
+
+        const root = ReactDOM.createRoot(rootEl);
+        root.render(<QuizPreviewWrapper />);
+
+        if (!window.pendingQuizData) window.pendingQuizData = [];
+
+        window.reactSetQuiz = (quizDetails) => {
+          if (!quizDetails) return;
+
+          if (typeof window._quizWrapperSetQuiz === "function") {
+            window._quizWrapperSetQuiz(quizDetails);
+          } else {
+            console.warn("⚠️ React not ready yet. Queuing quiz data:", quizDetails);
+            window.pendingQuizData.push(quizDetails);
+          }
+        };
+      });
+
+</script>
+
+<script>
+/********* Load Quiz Details on Click *********/
+async function onQuizClick(quizId) {
+  try {
+    // 1️⃣ Fetch main quiz details
+    let res = await fetch(`http://localhost:4001/api/quiz/${quizId}`);
+    let quizDetails = await res.json();
+
+    if (!quizDetails.game) throw new Error("Quiz details missing 'game' object");
+    let { game } = quizDetails;
+
+    // 2️⃣ Activate if inactive
+    if (game.status !== "active") {
+      const activateRes = await fetch(`http://localhost:4001/api/quiz/${quizId}/activate`, { method: "PATCH" });
+      if (!activateRes.ok) {
+        alert("Failed to activate quiz.");
+        return;
+      }
+      const activateData = await activateRes.json();
+      game = activateData.game;
+      alert("Quiz activated! You can now play it.");
+    }
+
+    // 3️⃣ Ensure scheduled_start_at exists
+    if (!game.scheduled_start_at) {
+      const scheduledStart = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+      await fetch(`http://localhost:4001/api/quiz/${quizId}/set-scheduled-start`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scheduledStart })
+      });
+      game.scheduled_start_at = scheduledStart;
+      console.log("⏱ Scheduled start set:", scheduledStart);
+    }
+
+    // 4️⃣ Trigger countdown via socket.io
+    if (window.socket) {
+      window.socket.emit("controller:start_countdown", {
+        gameId: game.id,
+        scheduledStart: game.scheduled_start_at
+      });
+    }
+
+    // 5️⃣ Optional: notify bridge
+    fetch("http://localhost:8080/api/start-countdown", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ gameId: game.id, scheduledStart: game.scheduled_start_at })
+    }).catch(err => console.error("⚠️ Failed to trigger countdown:", err));
+
+    // 6️⃣ Store globally
+    window.currentGameId = game.id;
+    const hiddenField = document.getElementById("currentGameId");
+    if (hiddenField) hiddenField.value = game.id;
+
+    // 7️⃣ Navigate to countdown via hash route
+    if (typeof window.reactNavigateToCountdown === "function") {
+      window.reactNavigateToCountdown(game.id);
+    } else {
+      window.location.href = `/quizzes_tab.html#/countdown?gameId=${game.id}`;
+    }
+
+  } catch (err) {
+    console.error("❌ Failed to load quiz details:", err);
+    alert("Failed to load quiz. Check console.");
+  }
+}
+
+
+/********* Left Panel Quiz List *********/
+async function populateLeftPanel() {
+  const container = document.getElementById("quizList");
+  if (!container) return;
+
+  container.innerHTML = '<div style="padding:8px;color:#888">Loading quizzes...</div>';
+
+  try {
+    const res = await fetch("http://localhost:4001/api/quizzes");
+    if (!res.ok) throw new Error(`Failed to fetch quizzes: ${res.statusText}`);
+    let quizzes = await res.json();
+
+    container.innerHTML = "";
+
+    if (!Array.isArray(quizzes) || quizzes.length === 0) {
+      container.innerHTML = '<div style="padding:8px;color:#888">No quizzes found.</div>';
+      return;
+    }
+
+    // Only show quizzes that have rounds
+    quizzes = quizzes.filter(q => q.has_rounds === 1);
+
+    if (quizzes.length === 0) {
+      container.innerHTML = '<div style="padding:8px;color:#888">No completed quizzes yet.</div>';
+      return;
+    }
+
+    // Sort newest first
+    quizzes.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    // Helper to parse DB time with PH timezone
+    function parseLocalPH(dateStr) {
+      if (!dateStr) return "Not assigned";
+      let dateObj = dateStr.includes('T')
+        ? new Date(dateStr)
+        : new Date(dateStr.replace(/-/g, '/'));
+      return isNaN(dateObj.getTime())
+        ? "Invalid Date"
+        : dateObj.toLocaleString('en-PH', { hour12: false });
+    }
+
+    quizzes.forEach((quiz) => {
+      const quizDiv = document.createElement("div");
+      quizDiv.classList.add("quiz-card");
+      quizDiv.dataset.id = quiz.game_id;
+      quizDiv.dataset.quizId = quiz.game_id;
+      quizDiv.style.cursor = "pointer";
+      quizDiv.style.border = "1px solid #ccc";
+      quizDiv.style.padding = "10px";
+      quizDiv.style.margin = "8px 0";
+      quizDiv.style.borderRadius = "6px";
+
+      // Make active quizzes blue
+      if (quiz.status === "active") {
+        quizDiv.style.backgroundColor = "#03bcdd";
+        quizDiv.style.color = "#fffdfd";
+      } else {
+        quizDiv.style.opacity = "0.5";
+      }
+
+      quizDiv.addEventListener("mouseenter", () => {
+        quizDiv.style.backgroundColor = "#029ec2";
+      });
+
+      quizDiv.addEventListener("mouseleave", () => {
+        quizDiv.style.backgroundColor = quiz.status === "active" ? "#03bcdd" : "#fff";
+        quizDiv.style.color = quiz.status === "active" ? "#fffdfd" : "#0e0d0d";
+      });
+
+      // Title
+      const title = document.createElement("h3");
+      title.textContent = quiz.quiz_title || `Quiz #${quiz.game_id || "N/A"}`;
+      quizDiv.appendChild(title);
+
+      // Metadata
+      const meta = document.createElement("p");
+      meta.style.fontSize = "12px";
+      meta.style.color = "#000";
+      meta.textContent = [
+      `Created: ${parseLocalPH(quiz.created_at)}`,
+      `Assigned: ${parseLocalPH(quiz.day)}`,
+      `Location: ${quiz.location}`,
+      `Status: ${quiz.status}`
+        ].join(" | ");
+      quizDiv.appendChild(meta);
+
+      // ❌ REMOVE location-based grouping (no longer valid)
+      // Instead, show simple team list for this quiz
+
+      const teamsContainer = document.createElement("div");
+      teamsContainer.style.fontSize = "12px";
+      teamsContainer.style.marginTop = "6px";
+      teamsContainer.textContent = "Loading teams...";
+      quizDiv.appendChild(teamsContainer);
+
+      if (quiz.status === "active") {
+        (async () => {
+          try {
+            const res = await fetch(`http://localhost:4001/api/teams?quiz_id=${quiz.game_id}`);
+            if (!res.ok) throw new Error("Failed to fetch teams");
+
+            const teams = await res.json();
+
+            if (!teams.length) {
+              teamsContainer.textContent = "No teams yet.";
+              return;
+            }
+
+            teamsContainer.innerHTML = teams
+              .map(t => `• ${t.team_name} (${t.score})`)
+              .join("<br>");
+
+          } catch (err) {
+            console.error("Failed to fetch teams:", err);
+            teamsContainer.textContent = "Error loading teams";
+          }
+        })();
+      } else {
+        teamsContainer.textContent = "Teams will appear once quiz is active";
+      }
+
+      // Assign Quiz button
+      const button = document.createElement("button");
+      button.textContent = "Assign Quiz";
+      button.className = "assign-btn";
+      button.style.marginTop = "8px";
+      button.addEventListener("click", (e) => {
+        e.stopPropagation();
+        assignQuiz(quiz.game_id);
+      });
+      quizDiv.appendChild(button);
+
+      // Click to open & activate quiz
+      quizDiv.addEventListener("click", () => onQuizClick(quiz.game_id));
+
+      container.appendChild(quizDiv);
+    });
+  } catch (err) {
+    console.error("❌ Failed to fetch quizzes:", err);
+    container.innerHTML = '<div style="padding:8px;color:red">Error loading quizzes.</div>';
+  }
+}
+
+
+//Assign Quiz
+function assignQuiz(quizId) {
+  const modal = document.getElementById("assignQuizModal");
+  const modalTitle = document.getElementById("modalQuizTitle");
+  const saveBtn = document.getElementById("saveAssign");
+  const daySelect = document.getElementById("daySelect");
+  const locationSelect = document.getElementById("locationSelect"); // new dropdown for location
+
+  modal.style.display = "flex"; // show modal
+  modalTitle.textContent = `Assign Quiz ID: ${quizId}`;
+
+  // Remove previous click listener to avoid duplicates
+saveBtn.onclick = async () => {
+  const selectedDay = daySelect.value;
+
+  try {
+    const res = await fetch("http://localhost:4001/api/assign-quiz", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ quizId, day: selectedDay }), // just day
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      alert(`✅ ${data.message}`);
+      modal.style.display = "none";
+    } else {
+      alert(`❌ Failed: ${data.error}`);
+    }
+     window.location.reload();
+  } catch (err) {
+    console.error("❌ Error assigning quiz:", err);
+    alert("Something went wrong while assigning quiz.");
+  }
+};
+}
+
+  // 🔹 Utility to extract a round number from a round object
+  function getRoundNumber(round, fallbackIndex) {
+    if (!round?.title) return fallbackIndex + 1;
+
+    // Music rounds (e.g. "Music Round 6")
+    const musicMatch = round.title.match(/Music Round (\d+)/i);
+    if (musicMatch) return parseInt(musicMatch[1], 10);
+
+    // Movie round (sometimes called "Name That Movie")
+    if (/Movie Round|Name That Movie/i.test(round.title)) return 15;
+
+    // Generic "Round X"
+    const genericMatch = round.title.match(/Round (\d+)/i);
+    if (genericMatch) return parseInt(genericMatch[1], 10);
+
+    // Fallback: just use array index
+    return fallbackIndex + 1;
+  }
+
+  // 🔹 Render table WITHOUT answers (newly generated quizzes)
+  function renderQuizTableNoAnswers(rounds) {
+    if (!Array.isArray(rounds)) return;
+
+    const tbody = document.getElementById('questionsTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    // ✅ Sort rounds by extracted round number
+    const sortedRounds = [...rounds].sort((a, b) =>
+      getRoundNumber(a, 0) - getRoundNumber(b, 0)
+    );
+
+    sortedRounds.forEach((round, roundIndex) => {
+      const questions = Array.isArray(round.questions) ? round.questions : [];
+      const seen = new Set();
+
+      questions.filter(q => {
+        const text = q.questionText || q.question || q.text || '';
+        if (!text.trim() || seen.has(text)) return false;
+        seen.add(text);
+        return true;
+      }).forEach((q, questionIndex) => {
+        const tr = document.createElement('tr');
+
+        const tdRound = document.createElement('td');
+        tdRound.textContent = round.title || `Round ${getRoundNumber(round, roundIndex)}`;
+        tdRound.style.color = '#853b81';
+        tdRound.style.padding = '10px';
+        tdRound.style.border = '1px solid #ccc';
+
+        const tdCategory = document.createElement('td');
+        tdCategory.textContent = round.category || '';
+        tdCategory.style.color = '#03adcf';
+        tdCategory.style.padding = '10px';
+        tdCategory.style.border = '1px solid #ccc';
+
+        const tdQuestion = document.createElement('td');
+        tdQuestion.textContent = q.questionText || q.question || q.text || '';
+        tdQuestion.style.padding = '10px';
+        tdQuestion.style.border = '1px solid #ccc';
+
+        const tdActions = document.createElement('td');
+        tdActions.innerHTML = `
+          <button class="action-button" onclick="openEditModal(${roundIndex}, ${questionIndex})" disabled>
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="action-button-red" onclick="deleteQuestion(${roundIndex}, ${questionIndex})" disabled>
+            <i class="fas fa-trash-alt"></i>
+          </button>
+          <button class="action-button-blue" onclick="openAddModal(${roundIndex})" disabled>
+            <i class="fas fa-plus"></i>
+          </button>
+        `;
+        tdActions.style.padding = '10px';
+        tdActions.style.border = '1px solid #ccc';
+
+        tr.appendChild(tdRound);
+        tr.appendChild(tdCategory);
+        tr.appendChild(tdQuestion);
+        tr.appendChild(tdActions);
+
+        tbody.appendChild(tr);
+      });
+    });
+  }
+
+// 🔹 Render table WITH answers (used quizzes)
+function renderQuizTableWithAnswers(rounds) {
+  if (!Array.isArray(rounds)) return;
+
+  const tbody = document.getElementById('questionsTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const globalSeen = new Set();
+
+  // Normalize rounds/questions
+  const normalizedRounds = rounds.map(round => ({
+    ...round,
+    questions: (round.questions || []).map(q => ({
+        id: q.id || q.question_id || q.raw_id, 
+      questionText: q.questionText || q.question || q.text || q.question_text || '',
+      correctAnswer:
+        q.correctAnswer ??
+        q.correct_answer ??
+        q.answer ??
+        (Array.isArray(q.answers) ? (q.answers.find(a => a.isCorrect)?.text || 'N/A') : 'N/A'),
+      raw: q
+    }))
+  }));
+
+  // Sort rounds by round_number
+  const sortedRounds = [...normalizedRounds].sort(
+    (a, b) => (a.round_number || 0) - (b.round_number || 0)
+  );
+
+  // Render each round
+  sortedRounds.forEach((round, roundIndex) => {
+    const questions = round.questions || [];
+
+    questions
+      .filter(q => {
+        const text = (q.questionText || '').trim();
+        if (!text || globalSeen.has(text)) return false;
+        globalSeen.add(text);
+        return true;
+      })
+      .forEach((q, questionIndex) => {
+        const tr = document.createElement('tr');
+
+        // Round number
+        const tdRoundNumber = document.createElement('td');
+        tdRoundNumber.textContent = `Round ${round.round_number || roundIndex + 1}`;
+        tdRoundNumber.style.color = '#853b81';
+        tdRoundNumber.style.padding = '10px';
+        tdRoundNumber.style.border = '1px solid #ccc';
+
+        // Category / Round title
+        const tdRoundTitle = document.createElement('td');
+        tdRoundTitle.textContent = round.category || '';
+        tdRoundTitle.style.color = '#03adcf';
+        tdRoundTitle.style.padding = '10px';
+        tdRoundTitle.style.border = '1px solid #ccc';
+
+        // Question
+        const tdQuestion = document.createElement('td');
+        tdQuestion.textContent = q.questionText;
+        tdQuestion.style.padding = '10px';
+        tdQuestion.style.border = '1px solid #ccc';
+
+        // Answer
+        const tdAnswer = document.createElement('td');
+        tdAnswer.textContent = q.correctAnswer;
+        tdAnswer.style.padding = '10px';
+        tdAnswer.style.border = '1px solid #ccc';
+
+        // Actions
+        const tdActions = document.createElement('td');
+        tdActions.innerHTML = `
+          <button class="action-button" onclick="openEditModal(${roundIndex}, ${questionIndex})">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="action-button-red" onclick="deleteQuestion(${q.id})">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+          <button class="action-button-blue" onclick="openAddModal(${roundIndex})">
+            <i class="fas fa-plus"></i>
+          </button>
+        `;
+        tdActions.style.padding = '10px';
+        tdActions.style.border = '1px solid #ccc';
+
+        // Append all columns
+        tr.appendChild(tdRoundNumber);
+        tr.appendChild(tdRoundTitle);
+        tr.appendChild(tdQuestion);
+        tr.appendChild(tdAnswer);
+        tr.appendChild(tdActions);
+
+        tbody.appendChild(tr);
+      });
+
+    // If a round has no questions, show an empty row
+    if (questions.length === 0) {
+      const tr = document.createElement('tr');
+      const tdEmpty = document.createElement('td');
+      // tdEmpty.colSpan = 5;
+      // tdEmpty.textContent = 'No questions yet';
+      tdEmpty.style.textAlign = 'center';
+      tdEmpty.style.padding = '10px';
+      tr.appendChild(tdEmpty);
+      tbody.appendChild(tr);
+    }
+  });
+}
+
+/********* Generate New Quiz *********/
+async function generateNewQuiz() {
+  try {
+    // 1️⃣ Collect form values
+    let dayInput = document.getElementById("day").value; // e.g., "2025-11-17T12:31"
+    const location = document.getElementById("quizLocation").value;
+
+    if (!dayInput || !location) {
+      alert("Please select a scheduled date/time and location!");
+      return;
+    }
+
+
+  const dayPH = dayInput.replace("T", " ") + ":00";
+
+
+    // 3️⃣ Create new game with details
+    const gameIdRes = await fetch("http://localhost:4001/api/game-id", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        day: dayPH,          // save PH local time
+        location,
+        status: "inactive"   // new quizzes are inactive by default
+      })
+    });
+
+    const gameData = await gameIdRes.json();
+    if (!gameData.id) throw new Error("Failed to create game");
+
+    const gameId = gameData.id;
+    window.gameId = gameId;
+    window.activeScheduledStart = dayPH;
+
+    const input = document.getElementById("gameIdInput");
+    if (input) input.value = gameId;
+
+    // Map round_number → DB round_id
+    const roundIdMap = {};
+    (gameData.rounds || []).forEach(r => {
+      roundIdMap[r.round_number] = r.id;
+    });
+
+    const allRounds = [];
+
+    // 4️⃣ Fetch general rounds
+    for (let i = 1; i <= 15; i++) {
+      if ([6, 12, 15].includes(i)) continue;
+      const res = await fetch(`http://localhost:4001/api/rounds/${i}`);
+      const data = await res.json();
+      if (!data?.questions?.length) continue;
+
+      allRounds.push({
+        roundId: i,
+        round_db_id: roundIdMap[i],
+        title: `Round ${i}`,
+        category: data.category || "General",
+        questions: data.questions
+      });
+    }
+
+    // 5️⃣ Fetch Music rounds (6, 12)
+    for (const musicRound of [6, 12]) {
+      const musicRes = await fetch(`http://localhost:4001/api/music-round?round_type=${musicRound}`);
+      const musicData = await musicRes.json();
+      if (musicData?.questions?.length) {
+        allRounds.push({
+          roundId: musicRound,
+          round_db_id: roundIdMap[musicRound],
+          title: `Round ${musicRound}`,
+          category: "Music Round",
+          questions: musicData.questions.map(q => ({
+            questionText: q.text,
+            correct_answer: q.correct_answer
+          }))
+        });
+      }
+    }
+
+    // 6️⃣ Feud round
+    const feudRes = await fetch("http://localhost:4001/api/round/feud");
+    const feudData = await feudRes.json();
+    if (feudData && feudData.question_text) {
+      allRounds.push({
+        roundId: 10,
+        round_db_id: roundIdMap[10],
+        title: "Round 10",
+        category: "Family Feud",
+        questions: [
+          {
+            questionText: feudData.question_text,
+            answers: [feudData.answer1, feudData.answer2, feudData.answer3, feudData.answer4]
+          }
+        ]
+      });
+    }
+
+    // 7️⃣ Movie round
+    const movieRes = await fetch("http://localhost:4001/api/movie-round");
+    const movieData = await movieRes.json();
+    if (movieData?.questions?.length) {
+      allRounds.push({
+        roundId: 15,
+        round_db_id: roundIdMap[15],
+        title: "Round 15",
+        category: "Name That Movie",
+        questions: movieData.questions.map(q => ({
+          questionText: q.question_text,
+          correct_answer: q.correct_answer
+        }))
+      });
+    }
+
+    // 8️⃣ Save quiz rounds + game details
+    const saveRes = await fetch("http://localhost:4001/api/quizzes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        gameId,
+        day: dayPH,
+        location,
+        scheduled_start_at: dayPH,
+        quiz_title: `General Knowledge Quiz ${gameId}`,
+        rounds: allRounds
+      })
+    });
+
+    const savedQuiz = await saveRes.json();
+    if (!savedQuiz.success) throw new Error("Failed to save quiz");
+    // ✅ Set this quiz as the active game
+const scheduledStartUTC = new Date(dayPH).toISOString(); // UTC ISO string
+
+await fetch("http://localhost:8080/api/set-active-game", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ gameId, scheduledStart: scheduledStartUTC })
+});
+
+// Optional: also store in this tab for immediate use
+window.activeGameId = gameId;
+window.activeScheduledStart = scheduledStartUTC;
+window.currentGameId = gameId;  // <-- used by fetchCurrentGameId()
+localStorage.setItem("currentGameId", gameId); // persist in localStorage
+console.log("✅ Active Game ID set:", gameId);
+
+    // 9️⃣ Trigger countdown for connected clients
+    try {
+    await fetch("http://localhost:8080/api/start-countdown", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ gameId, scheduledStart: dayPH })
+
+    });
+    } catch (err) {
+      console.error("⚠️ Failed to trigger countdown:", err);
+    }
+
+    // Navigate to CountdownPage
+    if (typeof window.reactNavigateToCountdown === "function") {
+      console.log("➡️ Navigating React TV to countdown page...");
+      window.reactNavigateToCountdown(gameId);
+    } else {
+      console.log("➡️ Navigating to countdown page via URL...");
+      window.location.href =
+  `/quizzes_tab.html#/countdown?gameId=${gameId}&scheduledStart=${encodeURIComponent(dayPH)}`;
+    }
+
+    // 9️⃣ Save globally and render
+    window._allRounds = allRounds;
+    renderQuizTableNoAnswers(allRounds);
+
+    // 🔹 Refresh left panel
+    await populateLeftPanel();
+
+    // 10️⃣ Alert scheduled PH local time
+    const phTimeString = new Date(dayPH.replace(/-/g, "/"))
+      .toLocaleString("en-PH", { hour12: false });
+
+    alert(`Quiz generated as INACTIVE. Activate it before it can be played.
+Scheduled Start: ${phTimeString}`);
+
+  } catch (err) {
+    console.error("❌ Failed to generate quiz:", err);
+    alert("Error generating quiz. Please check the console.");
+  }
+}
+
+
+// Open Add Question Modal
+function openAddModal(roundIndex) {
+  currentEditRoundIndex = roundIndex;
+  currentEditIndex = null;
+  currentModalType = 'add';
+
+  document.getElementById('addInput').value = "";
+  const addAnswerField = document.getElementById('addAnswerInput');
+  if (addAnswerField) addAnswerField.value = ""; // clear if exists
+
+  document.getElementById('addModal').style.display = 'block';
+}
+
+// Open Edit Question Modal
+function openEditModal(roundIndex, questionIndex) {
+  const question = window._allRounds?.[roundIndex]?.questions?.[questionIndex];
+  if (!question || !question.id) return alert("This question cannot be edited yet.");
+
+  currentEditRoundIndex = roundIndex;
+  currentEditIndex = questionIndex;
+  currentModalType = 'edit';
+
+  document.getElementById('editInput').value =
+    question.text || question.question || question.questionText || '';
+
+  document.getElementById('editAnswerInput').value =
+    question.correct_answer ?? question.correctAnswer ?? question.answer ?? '';
+
+  document.getElementById('editModal').style.display = 'block';
+}
+
+// Close both modals
+function closeModal() {
+  document.querySelectorAll(".modal").forEach(m => m.style.display = 'none');
+  currentModalType = null;
+  currentEditRoundIndex = null;
+  currentEditIndex = null;
+}
+
+// Save Add or Edit
+function saveQuestion() {
+  const value = (currentModalType === 'edit') 
+    ? document.getElementById('editInput').value.trim() 
+    : document.getElementById('addInput').value.trim();
+
+  const answerValue = (currentModalType === 'edit') 
+    ? document.getElementById('editAnswerInput').value.trim()
+    : document.getElementById('addAnswerInput').value.trim();
+
+  if (!value || !answerValue) {
+    alert("Both question and answer are required.");
+    return;
+  }
+
+  // 🟢 EDIT
+  if (currentModalType === 'edit') {
+    const question = window._allRounds[currentEditRoundIndex].questions[currentEditIndex];
+    if (!question || !question.id) {
+      alert("Invalid question reference.");
+      return;
+    }
+
+    window.currentEditingQuestion = question;
+
+    const isQuizQuestion = question.source === "quiz";
+    const url = isQuizQuestion
+      ? `http://localhost:4001/update-quiz-question/${question.id}`
+      : `http://localhost:4001/update-question/${question.id}`;
+
+    fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: question.id,
+        question_text: value,
+        correct_answer: answerValue,
+        wrong_answer: question.wrong ? question.wrong.join(",") : "",
+        tags: question.tags || "",
+        multiple_choice: question.type === "mc" ? 1 : 0
+      })
+    })
+      .then(async res => {
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+      })
+      .then(() => {
+        question.questionText = value;
+        question.correctAnswer = answerValue;
+        question.correct_answer = answerValue;
+
+        renderQuizTableWithAnswers(window._allRounds);
+        closeModal();
+      })
+      .catch(err => {
+        console.error("❌ Edit failed:", err);
+        alert("Failed to update question. See console for details.");
+      });
+
+// 🟢 ADD
+} else if (currentModalType === 'add') {
+  const round = window._allRounds[currentEditRoundIndex] || {};
+
+  const gameId = window.gameId || window.currentGameId;
+  if (!gameId) {
+    alert("Missing game ID — cannot save question.");
+    return;
+  }
+
+  // ✅ Try both round_db_id and id fallback
+  const roundId = round.round_db_id || round.id;
+  if (!roundId) {
+    alert("Missing round ID — cannot save question.");
+    return;
+  }
+
+  const payload = {
+    game_id: gameId,
+    round_id: roundId,     
+    round_number: round.roundId || round.round_number,
+    question_text: value,
+    correct_answer: answerValue,
+    wrong_answer: "",
+    tags: "",
+    multiple_choice: 0
+  };
+
+  fetch(`http://localhost:4001/api/quiz-questions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+    .then(async res => {
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    })
+    .then(newQ => {
+      if (!window._allRounds[currentEditRoundIndex]) {
+        window._allRounds[currentEditRoundIndex] = { questions: [] };
+      }
+      window._allRounds[currentEditRoundIndex].questions.push({
+        id: newQ.id,
+        questionText: newQ.question_text,
+        correctAnswer: newQ.correct_answer,
+        correct_answer: newQ.correct_answer,
+        wrong: newQ.wrong_answer ? newQ.wrong_answer.split(",") : [],
+        tags: newQ.tags || "",
+        source: "quiz"
+      });
+      renderQuizTableWithAnswers(window._allRounds);
+      closeModal();
+
+       window.location.reload();
+    })
+    .catch(err => {
+      console.error("❌ Add failed:", err);
+      alert("Failed to add question. See console for details.");
+    });
+}
+}
+
+// ✅ unified modal closer
+function closeModal() {
+  document.querySelectorAll(".modal").forEach(m => (m.style.display = "none"));
+}
+
+// Delete Question
+function deleteQuestion(roundIndex, questionIndex) {
+  const question = window._allRounds?.[roundIndex]?.questions?.[questionIndex];
+  if (!question || !question.id) return;
+
+  if (!confirm("Are you sure you want to delete this question?")) return;
+
+  fetch(`http://localhost:4001/api/questions/${question.id}`, { method: 'DELETE' })
+    .then(async res => {
+      if (!res.ok) throw new Error(await res.text());
+      window._allRounds[roundIndex].questions.splice(questionIndex, 1);
+      renderFullQuiz(window._allRounds);
+    })
+    .catch(err => {
+      console.error('Delete failed:', err);
+      alert("Failed to delete question. See console for details.");
+    });
+}
+
+// Initialize left panel on page load
+document.addEventListener('DOMContentLoaded', populateLeftPanel);
+
+
+</script>
+
+<script>
+    let selectedDay = "";
+    let selectedTimezone = "";
+
+    function selectDay() {
+      selectedDay = document.getElementById("day").value;
+      updateScheduleInfo();
+    }
+
+    function selectTimeZone() {
+      selectedTimezone = document.getElementById("timezone").value;
+      updateScheduleInfo();
+    }
+
+    function updateScheduleInfo() {
+      const infoBox = document.getElementById("scheduleinfo");
+      if (infoBox) {
+        infoBox.textContent =
+          selectedDay && selectedTimezone
+            ? `Scheduled on ${selectedDay} @ ${selectedTimezone}`
+            : selectedDay
+            ? `Scheduled on ${selectedDay}`
+            : selectedTimezone
+            ? `Scheduled at ${selectedTimezone}`
+            : "";
+      }
+    }
+
+    function refreshAll() {
+    // Clear selected quiz ID
+    window.selectedQuizId = null;
+    lastId = null;
+
+    // Clear the questions table
+    const tbody = document.getElementById('questionsTableBody');
+    tbody.innerHTML = '';
+
+    // Optionally refresh preview box if using hash-based routing
+    if (location.hash === '#/play/preview') {
+      location.hash = '#/refresh-temp';
+      setTimeout(() => {
+        location.hash = '#/play/preview';
+      }, 10);
+    }
+
+    // Optional: show a message
+    console.log("Quiz has been reset.");
+  }
+</script>
+
+<script>
+
+// 🔍 Search
+async function searchQuestions() {
+  const query = document.getElementById("searchQuestions").value.trim();
+
+  if (!query) {
+    // Show full round again
+    renderQuizTableWithAnswers(window._currentRound, window.selectedQuizId);
+    return;
+  }
+
+  try {
+    const res = await fetch(
+      `http://localhost:4001/api/quiz-questions?search=${encodeURIComponent(query)}`
+    );
+    const data = await res.json();
+
+    if (!Array.isArray(data) || data.length === 0) {
+      console.warn("🔍 No valid questions found.");
+      renderQuizTableWithAnswers([], window.selectedQuizId);
+      return;
+    }
+
+    // 🔹 Transform DB rows into our expected format
+    const transformedQuestions = data.map(q => {
+      let options = [];
+      try {
+        options = JSON.parse(q.multiple_choice || "[]");
+      } catch {
+        options = [];
+      }
+
+      return {
+        id: q.id,
+        round_id: q.round_id,                    
+        category: q.category || "Uncategorized",   
+        text: q.question_text,
+        type: options.length ? "mc" : "text",
+        options,
+        correct_answer: q.correct_answer,
+        wrong_answer: q.wrong_answer,
+        tags: q.tags || []
+      };
+    });
+
+    // 🔹 Group results by round_id + category instead of "Search Results"
+    const groupedByRound = Object.values(
+      transformedQuestions.reduce((acc, q) => {
+        const key = `${q.round_id}-${q.category}`;
+        if (!acc[key]) {
+          acc[key] = {
+            round_number: q.round_id,
+            category: q.category,
+            questions: []
+          };
+        }
+        acc[key].questions.push(q);
+        return acc;
+      }, {})
+    );
+
+    renderQuizTableWithAnswers(groupedByRound, window.selectedQuizId);
+
+  } catch (error) {
+    console.error("❌ Search failed:", error);
+  }
+}
+
+// Delete Question
+function deleteQuestion(questionId) {
+  if (!confirm("Are you sure you want to delete this question?")) return;
+
+  fetch(`/api/delete-question-api/${questionId}`, { method: "DELETE" })
+    .then(res => {
+      if (!res.ok) throw new Error(`Delete failed. Status: ${res.status}`);
+      return res.json();
+    })
+    .then(data => {
+      console.log("✅ Deleted:", data);
+      alert("Question deleted successfully");
+      refreshAll();
+    })
+    .catch(err => {
+      console.error("❌ Delete failed:", err);
+      alert("Failed to delete question. See console for details.");
+    });
+}
+
+//Fetch Teams, Locations and Scores
+document.addEventListener("DOMContentLoaded", loadQuizData);
+
+async function loadQuizData() {
+  const teamList = document.getElementById("team-list");
+  const locList = document.getElementById("location-list");
+  const scoreContainer = document.getElementById("scoresContainer");
+
+  // teamList.innerHTML = locList.innerHTML = scoreContainer.innerHTML = "<em>Loading...</em>";
+
+  try {
+    const res = await fetch("http://localhost:8080/api/quiz-data");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const { teams, locations, scores } = await res.json();
+
+  } catch (err) {
+    console.error("Error loading quiz data:", err);
+    // teamList.innerHTML = locList.innerHTML = scoreContainer.innerHTML = "<em>Error loading data.</em>";
+  }
+}
+</script>
+ 
+<script src="http://localhost:8080/socket.io/socket.io.js"></script>
+ <script src="build/static/js/main.7a28aa57.js"></script>
+ 
+</body>
+</html>

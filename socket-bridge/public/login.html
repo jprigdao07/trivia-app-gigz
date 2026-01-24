@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GIGZ - Login</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+      body {
+      background: url('trivia-app.PNG') no-repeat center center fixed;
+      background-size: cover;
+      background-attachment: fixed no;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      /* background: linear-gradient(135deg, #2c3e50, #4ca1af); */
+      color: white;
+      font-family: "Poppins", sans-serif;
+      overflow: hidden;
+    }
+
+    .login-container {
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+    }
+
+    .logo {
+      font-size: 2.2em;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      font-size: 1em;
+      opacity: 0.8;
+      margin-bottom: 25px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1em;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    button {
+      background-color: #5b36f8;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 1em;
+      cursor: pointer;
+      width: 100%;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #4226b8;
+    }
+
+    .footer {
+      margin-top: 20px;
+      font-size: 0.9em;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="logo">GIGZ</div>
+    <div class="subtitle">Sign in to continue</div>
+
+    <input type="text" id="username" placeholder="Enter your phone or email" />
+
+    <button id="loginBtn">Send Code</button>
+
+    <div class="footer">Powered by Five★Host</div>
+  </div>
+
+  <script>
+    document.getElementById("loginBtn").addEventListener("click", () => {
+      const user = document.getElementById("username").value.trim();
+      if (user === "") {
+        alert("Please enter your email or phone number");
+        return;
+      }
+
+      // Save user info temporarily (you can later connect this to backend)
+      localStorage.setItem("pendingUser", user);
+
+      // Redirect to OTP verification (Screen 3)
+      window.location.href = "verify.html";
+    });
+  </script>
+</body>
+</html>

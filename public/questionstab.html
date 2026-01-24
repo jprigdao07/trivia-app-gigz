@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+  />
+  <title>Questions</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"
+  ></script>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css"
+  />
+  <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
+  <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
+  <!-- <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.4/ffmpeg.min.js"></script> -->
+  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+  <script src="https://unpkg.com/wavesurfer.js"></script>
+  <script src="https://unpkg.com/wavesurfer.js/dist/plugins/regions.min.js"></script>
+</head>
+<body>
+  <header class="top-nav">
+    <div class="logo-container">
+      <img src="logo_gradient.png" alt="Company Logo" class="logo" />
+    </div>
+    <nav class="nav-links">
+      <a href="dashboard.html">Home</a>
+      <a href="questionstab.html" class="active">Questions</a>
+      <a href="quizzes_tab.html">Quizzes</a>
+      <a href="quizzes.html">Users</a>
+      <a href="#">Venues</a>
+      <a href="#">Hosts</a>
+      <a href="#">Billing</a>
+      <a href="#">Analytics</a>
+    </nav>
+    <button class="sign-out">Sign Out</button>
+  </header>
+
+  <main>
+    <section class="questions-container music-container" id="questions-container">
+      <!-- Left section: Standard questions or music rounds -->
+      <section class="questions-input" id="questions-input" style="width: 50%;">
+        <p class="question-count">
+          <strong>Questions in Category:</strong><span id="questionCount">0</span>
+        </p>
+        <form id="questionFormQuestions" class="mainForm" method="post" enctype="multipart/form-data" onsubmit="return false;">
+          <div class="form-row category-row">
+            <label for="categoryQuestions" class="catlabel">Select Category:</label>
+            <input type="hidden" id="questionId" name="questionId">
+            <input type="hidden" id="imageId" name="imageId">
+            <input type="hidden" id="selectedImageId" name="selectedImageId">
+            <input type="hidden" id="deletequestionId" name="deletequestionId">
+            <input type="hidden" name="imageOnly" value="false" id="imageOnlyInput" />
+            <select id="categoryQuestions" name="categoryName" class="qi-selectCategory">
+              <option value="american-history" data-id="1">American History</option>
+              <option value="geography" data-id="2">Geography</option>
+              <option value="sports" data-id="3">Sports</option>
+              <option value="science-tech" data-id="4">Science & Tech</option>
+              <option value="who-am-i" data-id="5">Who Am I</option>
+              <option value="music-rounds" data-id="6">Music Rounds</option>
+              <option value="arts-literature" data-id="7">Arts & Literature</option>
+              <option value="random" data-id="8">Random</option>
+               <option value="entertainment" data-id="9">Entertainment</option>
+               <option value="feud" data-id="10">Feud</option>
+              <option value="nature" data-id="11">Nature</option>
+              <option value="music-rounds" data-id="12">Music Rounds</option>
+              <option value="world-history" data-id="13">World History</option>
+              <option value="wager-round" data-id="14">Wager Round</option>
+              <option value="movies" data-id="15">Movies</option>
+              <option value="add-category" data-id="">Add Category</option>
+            </select>
+
+            <input type="hidden" id="categoryId" name="categoryId" />
+            <div id="multipleChoiceContainer" style="display: flex; gap: 10px; align-items: center;">
+              <label for="multipleChoice" class="multiple-choice-label">Multiple Choice Only:</label>
+              <input type="checkbox" id="multipleChoice" class="multiple-choice-check" name="multipleChoice" style="width: 16px; height: 16px; margin-top: auto;"/>
+           </div>          
+          </div>
+
+          <div class="form-row quest">
+            <label for="questionText">Enter Question:</label>
+            <textarea
+              id="questionText"
+              name="questionText"
+              placeholder="Type your question here..."
+              rows="4"
+            ></textarea>
+          </div>
+
+          <div class="form-row ans">
+            <label for="correctAnswers">Correct Answer:</label>
+            <input
+              type="text"
+              id="correctAnswer"
+              name="correctAnswer"
+              placeholder="Enter the correct answer"
+            />
+          </div>
+
+          <div class="form-row wrongans">
+            <label for="wrongAnswers">Wrong Answers:</label>
+            <input
+              type="text"
+              id="wrongAnswer"
+              name="wrongAnswer"
+              placeholder="Enter wrong answers, separated by commas"
+            />
+          </div>
+
+          <div id="tagsQuestions-con" class="form-row tagsQuestions">
+            <label for="tagsQuestions">Tags:</label>
+            <input
+              type="text"
+              id="tagsQuestions"
+              name="tagsQuestions"
+              placeholder="Enter tags, separated by commas"
+            />
+          </div>
+
+          <!-- Music Editor Section (shown when category = music-rounds) -->
+          <div id="musicEditorSection" class="music-editor-section">
+            <div class="music-editor-container">
+              <label for="musicFile">Upload Song:</label>
+              <input
+                type="file"
+                id="musicFile"
+                name="musicFile"
+                accept="audio/*"
+                class="qi-uploadImage"
+              />
+              <canvas id="waveCanvas" class="waveForm"></canvas>
+              <div class="music-controls-bgc">
+                <button type="button" id="playPauseBtn" class="qi-button">Play</button>
+                <button type="button" id="stopBtn" class="qi-button">Stop</button>
+                <button type="button" id="applyCropBtn" class="qi-button">Crop</button>
+                
+                </div>
+              <div class="crop-controls">
+                <label for="cropStart">Start (s):</label>
+                <input
+                  type="number"
+                  id="cropStart"
+                  value="0"
+                  min="0"
+                  step="0.1"
+                  class="qi-uploadImage crop-input"
+                />
+                <label for="cropEnd">End (s):</label>
+                <input
+                  type="number"
+                  id="cropEnd"
+                  value="0"
+                  min="0"
+                  step="0.1"
+                  class="qi-uploadImage crop-input"
+                />
+              </div>
+              <div class="enhancement-controls">
+                <label for="gainRange">Gain:</label>
+                <input
+                  type="range"
+                  id="gainRange"
+                  min="0"
+                  max="2"
+                  step="0.1"
+                  value="1"
+                  class="enhance-slider"
+                />
+                <label for="lowFilterRange">Low Filter (Hz):</label>
+                <input
+                  type="range"
+                  id="lowFilterRange"
+                  min="20"
+                  max="1000"
+                  step="10"
+                  value="20"
+                  class="enhance-slider"
+                />
+              </div>
+              <div class="export-section">
+                <button
+                  type="submit"
+                  id="saveBtn"
+                  class="qi-button qi-button-submit"
+                >
+                  Save / Export
+                </button>
+              </div>
+            </div>
+
+            <div class="form-row music-inputs">
+              <div class="music-input-pair">
+                <div class="music-input">
+                  <label for="artistName">Artist/Band Name:</label>
+                  <input
+                    type="text"
+                    id="artistName"
+                    name="artistName"
+                    class="qi-uploadImage"
+                    placeholder="Enter artist or band name"
+                  />
+                </div>
+                <div class="music-input">
+                  <label for="songTitle">Song Title:</label>
+                  <input
+                    type="text"
+                    id="songTitle"
+                    name="songTitle"
+                    class="qi-uploadImage"
+                    placeholder="Enter song title"
+                  />
+                </div>
+              </div>
+
+              <div class="music-input-pair">
+                <div class="music-input">
+                  <label for="wrongName">Wrong Name:</label>
+                  <input
+                    type="text"
+                    id="wrongName"
+                    name="wrongName"
+                    class="qi-uploadImage"
+                    placeholder="Enter artist or band name"
+                  />
+                </div>
+                <div class="music-input">
+                  <label for="wrongTitle">Wrong Title:</label>
+                  <input
+                    type="text"
+                    id="wrongTitle"
+                    name="wrongTitle"
+                    class="qi-uploadImage"
+                    placeholder="Enter song title"
+                  />
+                </div>
+              </div>
+
+              <div class="music-input">
+                <label for="wrongTitle">Wrong Answers:</label>
+                <input
+                  type="text"
+                  id="wrongAnswerMusic"
+                  name="wrongAnswerMusic"
+                  class="qi-uploadImage wrongAnswerMusic"
+                  placeholder="Enter Wrong Answers"
+                />
+              </div>
+
+              <div class="music-input-pair">
+              <div class="music-input">
+              <label for="featuring">Featuring:</label>
+              <input
+                type="text"
+                id="featuring"
+                name="featuring"
+                class="qi-uploadImage"
+                placeholder="Enter featuring artists, separated by semicolons"
+              />
+            </div>
+              <div class="music-input">
+              <label for="musicTags">Tags:</label>
+              <input
+                type="text"
+                id="musicTags"
+                name="musicTags"
+                class="qi-uploadImage"
+                placeholder="Enter tags, separated by commas"
+              />
+            </div>
+          </div>
+        </div>
+        </div>
+          <!-- End music editor section -->
+
+          <div class="form-buttons">
+            <button type="button" class="form-btn qi-button-clear" id="clearForm">
+              Clear
+            </button>
+            <button type="button" class="form-btn" id="editQuestionQuestions">
+              Edit
+            </button>
+            <button type="button" class="form-btn edit-song-btn" id="editSong">
+              Edit Song
+            </button>
+            <button class="delete-btn" id="deleteQuestionQuestions">
+              <i class="fa fa-trash"></i> Delete Question
+            </button>
+            <button class="delete-btn delete-song-btn" id="deleteSong">
+              <i class="fa fa-trash"></i> Delete Song
+            </button>
+          </div>
+
+          <div class="form-row">
+            <label for="searchQuestions">Search Questions:</label>
+            <input
+              type="text"
+              id="searchQuestions"
+              name="searchQuestions"
+              placeholder="Search existing questions..."
+              class="qi-uploadImage musicSearchInput"
+            />
+          </div>
+          <div id="questionsDisplayQuestions" class="questions-display musicQuestionsDisplay"></div>
+      </section>
+
+      <!-- Right section: Image upload / who am i / characters / etc. -->
+      <section class="questions-image-input" id="quest-section">
+        <div class="qi-row">
+          <div id="imagePreview" class="qi-image-preview-new">
+            <strong class="image-preview-text">
+              Drag and drop an image here, or select image from database
+            </strong>
+            <div id="cropperContainer" class="cropper-container">
+              <img id="cropperImage" class="cropper-image" />
+              </div>
+            </div>
+            <div class="cropper-controls">
+            <button type="button" id="cropImageBtn" class="qi-button">
+              Crop
+            </button>
+            <button type="button" id="resetCropBtn" class="qi-button">
+              Reset
+            </button>
+          </div>
+        </div>
+        
+        <div class="qi-row">
+          <input
+            type="file"
+            id="imageFile"
+            name="imageFile"
+            class="qi-input-file"
+            accept="image/*"
+          />
+        </div>
+
+        <div class="row-new">
+          <label for="imageCategory" class="category-label">Select Category:</label>
+          <label for="firstName" class="catName">Name:</label>
+
+        <div class="qi-row old-check-row">
+          <select id="imageCategory" name="charperCategory" class="qi-select-charPer">
+            <option value="place">Place</option>
+            <option value="thing">Thing</option>
+            <option value="character" selected>Character</option>
+            <option value="person">Person</option>
+          </select>
+
+          <!-- Person checkboxes -->
+          <div id="checkboxes" class="qi-person-fields qi-hidden personFields1">
+            <label for="sports" class="qi-label-field check">Sports</label>
+            <input
+              type="checkbox"
+              id="sports"
+              name="categories[]"
+              class="person-field"
+            />
+          </div>
+          <div id="checkboxes" class="qi-person-fields qi-hidden personFields1">
+            <label for="entertainment" class="qi-label-field check"
+              >Entertainment</label
+            >
+            <input
+              type="checkbox"
+              id="entertainment"
+              name="categories[]"
+              class="person-field"
+            />
+          </div>
+          <div id="checkboxes" class="qi-person-fields qi-hidden personFields1">
+            <label for="others" class="qi-label-field check">Other</label>
+            <input
+              type="checkbox"
+              id="other"
+              name="categories[]"
+              class="person-field"
+            />
+          </div>
+
+          <!-- Character checkboxes -->
+          <div id="checkboxes" class="check-new charFields1">
+            <label for="movie" class="qi-label-field charcheck">Movie:</label>
+            <input type="checkbox" id="movie" name="categories[]" class="input-box" />
+          </div>
+          <div id="checkboxes" class="check-new charFields1">
+            <label for="telev" class="qi-label-field charcheck">TV:</label>
+            <input type="checkbox" id="telev" name="categories[]" class="input-box" />
+          </div>
+          <div id="checkboxes" class="check-new charFields1">
+            <label for="cart" class="qi-label-field charcheck">Cartoon:</label>
+            <input type="checkbox" id="cart" name="categories[]" class="input-box" />
+          </div>
+
+          <input
+            type="text"
+            id="namePlace"
+            name="namePlace"
+            class="qi-select2 name-field"
+            placeholder="Enter Name"
+          />
+          <button type="button" id="subImgOnly" name="subImg" class="btn btn-primary sub-img">
+            Submit Image Only
+          </button>
+        </div>
+     </div> 
+
+        <!-- Person fields form -->
+        <div
+          class="qi-row qi-person-fields qi-hidden personFields"
+          id="personFields"
+        >
+        <input type="hidden" id="selectedImageId">
+          <div class="qi-person-field">
+            <label for="firstNamePerson" class="qi-label-field">First Name:</label>
+            <input
+              type="text"
+              id="firstNamePerson"
+              name="firstNamePerson"
+              class="person-field"
+              placeholder="Enter first name"
+            />
+          </div>
+          <div class="qi-person-field">
+            <label for="midName" class="qi-label-field">Middle Name:</label>
+            <input
+              type="text"
+              id="midNamePerson"
+              name="midNamePerson"
+              class="person-field"
+              placeholder="Enter Middle name"
+            />
+          </div>
+          <div class="qi-person-field">
+            <label for="lastName" class="qi-label-field">Last Name:</label>
+            <input
+              type="text"
+              id="lastNamePerson"
+              name="lastNamePerson"
+              class="person-field"
+              placeholder="Enter last name"
+            />
+          </div>
+        </div>
+
+        <!-- Character fields form -->
+        <div
+          class="qi-row qi-person-fields qi-hidden charFields"
+          id="charFields"
+        >
+          <div class="qi-person-field">
+            <label for="firstNameChar" class="qi-label-field">First Name:</label>
+            <input
+              type="text"
+              id="firstNameChar"
+              name="firstNameChar"
+              class="person-field"
+              placeholder="Enter first name"
+            />
+          </div>
+          <div class="qi-person-field">
+            <label for="midName" class="qi-label-field">Middle Name:</label>
+            <input
+              type="text"
+              id="midNameChar"
+              name="midNameChar"
+              class="person-field"
+              placeholder="Enter Middle name"
+            />
+          </div>
+          <div class="qi-person-field">
+            <label for="lastNameChar" class="qi-label-field">Last Name:</label>
+            <input
+              type="text"
+              id="lastNameChar"
+              name="lastNameChar"
+              class="person-field"
+              placeholder="Enter last name"
+            />
+          </div>
+        </div>
+
+        <div class="form-row wrongans">
+          <label for="wrongAnswers" class="wrongAns">Wrong Answers:</label>
+          <input
+            type="text"
+            id="wrongAnswerrightSec"
+            name="wrongAnswerrightSec"
+            class="wrongAnswerrightSec"
+            placeholder="Enter wrong answers, separated by commas"
+          />
+        </div>
+
+        <div class="form-row tags-sec">
+          <label for="rightsecTags" class="tags-label">Tags:</label>
+          <input
+            type="text"
+            id="rightsecTags"
+            class="rightsecTags"
+            name="rightsecTags"
+            placeholder="Enter tags, separated by commas"
+          />
+        </div>
+
+        <div class="qi-row qi-action-buttons action-buttons1">
+          <button type="button" id="clearImageForm" class="qi-button qi-button-clear">
+            Clear
+          </button>
+          <button type="button" id="editImage" data-id="123" class="qi-button qi-button-edit editImage">
+            Edit
+          </button>
+          <button class="delete-btn" id="deleteImage">
+            <i class="fa fa-trash"></i> Delete Image
+          </button>
+          <button type="submit" id="uploadImage" class="qi-button qi-button-submit" name="subImg" value="question">
+            Submit
+          </button>
+        </div>
+
+        <div class="form-row right-row">
+          <label for="searchImages" class="qi-label">Search Images:</label>
+          <input
+            type="text"
+            id="searchImages"
+            name="searchImages"
+            class="qi-uploadImage"
+            placeholder="Search uploaded images..."
+          />
+        </div>
+        <div id="imageSearchResults" class="qi-search-results"></div>
+
+      </section>
+
+       <!-- New Right Section for Music Rounds: -->
+       <section class="bandSongsec" id="bandSongsec" style="display: none; width: 50%">
+        <input type="hidden" id="selectedImageMusic">
+        <div id="imagePreviewMusic" class="imagePreviewMusic">
+          <strong class="image-preview-textMusic" id="image-preview-textMusic">
+            Drag and drop an image here, or select image from database
+          </strong>
+          <div id="cropperContainerMusic" class="cropper-containerMusic">
+            <img id="cropperImageMusic" class="cropper-imageMusic" />
+            <div class="cropper-controlsMusic">
+              <button type="button" id="cropImageBtnMusic" class="qi-button">
+                Crop
+              </button>
+              <button type="button" id="resetCropBtnMusic" class="qi-button">
+                Reset
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="qi-row">
+        <input
+          type="file"
+          id="imageFileMusic"
+          name="imageFileMusic"
+          class="qi-input-file"
+          accept="image/*"
+        />
+      </div>
+  
+      <div class="row" style="display: flex; gap: 0px; align-items: center;">
+  
+        <!-- Category Selection -->
+        <div class="qi-row new-check-row">
+          <label for="imageCategory" class="category-label">Select Category:</label>
+          <select id="songCategory" name="songCategory" class="qi-select-genre">
+            <option value="name-that-song">Name That Song</option>
+            <option value="name-that-artist-or-band">Name That Artist or Band</option>
+          </select>
+        </div>
+      
+        <!-- Genre Selection -->
+        <div class="qi-row new-check-row">
+          <label for="genre" class="category-label">Select Genre:</label>
+          <select id="genre" name="newGenre" class="qi-select-genre">   
+            <option value="rock">Rock</option>
+            <option value="pop">Pop</option>
+            <option value="jazz">Jazz</option>
+            <option value="classical">Classical</option>
+          </select>
+        </div>
+      
+        <div class="button-container">
+          <button id="subMusic" class="btn btn-primary sub-img" name="subMusic">
+            Submit Image Only
+          </button>
+        </div>
+      </div>
+
+      <!-- Person fields form -->
+      <div
+        class="row"
+        id="bandNameFields" style="display: flex; max-width: 100%; flex: 1;"
+      >
+        <div class="qi-bandName">
+          <label for="bandName" class="bandLabel">Artist/Band Name:</label>
+          <input
+            type="text"
+            id="bandName"
+            name="bandName"
+            class="bandNamefield"
+            placeholder="Enter artist or band name"
+          />
+        </div>
+        <div class="qi-bandName">
+          <label for="songLabel" class="songLabel">Song Title:</label>
+          <input
+            type="text"
+            id="songField"
+            name="songField"
+            class="bandNamefield"
+            placeholder="Enter song title"
+          />
+        </div>
+      </div>
+  
+      <div class="form-row tags-sec">
+        <label for="rightsecTags" class="tags-label">Tags:</label>
+        <input
+          type="text"
+          id="rightsecTagsMusic"
+          class="rightsecTags"
+          name="rightsecTagsMusic"
+          placeholder="Enter tags, separated by commas"
+        />
+      </div>
+  
+      <div class="qi-row qi-action-buttons action-buttons1">
+        <button type="button" id="clearImageFormMusic" class="qi-button qi-button-clear">
+          Clear
+        </button>
+        <button type="button" id="editImageSong" class="qi-button qi-button-edit editImageSong">
+          Edit
+        </button>
+        <button class="delete-image-song" id="deleteImageSong" >
+          <i class="fa fa-trash"></i> Delete Image
+        </button>
+        <button type="button" id="subSong" name="subSong" class="qi-button qi-button-submit">
+          Submit
+        </button>
+      </div>
+  
+      <div class="form-row right-row">
+        <label for="searchImages" class="qi-label">Search Images:</label>
+        <input
+          type="text"
+          id="searchImagesMusic"
+          name="searchImagesMusic"
+          class="qi-uploadImage"
+          placeholder="Search uploaded images..."
+        />
+      </div>
+  
+      <div id="imageSearchResults" class="qi-search-results musicSearchRight"></div>
+    </form>
+  </section>
+</main>
+
+    <!-- Feud input section -->
+    <section id="quizzes-container">
+      <section id="feud-input" class="feud-input" style="display: none;">
+        <p class="question-count">
+          <strong>Questions in Category:</strong
+          ><span id="feudQuestionCount">0</span>
+        </p>
+        <form id="questionFormFeud">
+          <div class="form-row category-row-feud">
+            <label for="categoryFeud" class="catlabel2">Select Category:</label>
+            <input type="hidden" id="feudId" name="feudId" />
+            <select id="categoryFeud" name="category" class="qi-select-feud">
+              <option value="american-history">American History</option>
+              <option value="geography">Geography</option>
+              <option value="sports">Sports</option>
+              <option value="science-tech">Science & Tech</option>
+              <option value="arts-literature">Arts & Literature</option>
+              <option value="entertainment">Entertainment</option>
+              <option value="nature">Nature</option>
+              <option value="world-history">World History</option>
+              <option value="music-rounds">Music Rounds</option>
+              <option value="feud">Feud</option>
+              <option value="wager-round">Wager Round</option>
+              <option value="movies">Movies</option>
+              <option value="add-category">Add Category</option>
+            </select>
+          </div>
+
+          <div class="feud-row">
+            <label for="feudQuestionText">Enter Question:</label>
+            <textarea
+              id="feudQuestionText"
+              name="questionText"
+              class="feud-text"
+              placeholder="Type your question here..."
+            ></textarea>
+          </div>
+
+          <div class="answer-buttons">
+            <div class="row">
+            <div>
+              <label for="answer1">4 Point Answer:</label>
+              <input type="text" id="answer1" class="pointans" placeholder="Answer" />
+            </div>
+            <div>
+              <label for="answer2">3 Point Answer:</label>
+              <input type="text" id="answer2" class="pointans" placeholder="Answer" />
+            </div>
+            <div>
+              <label for="answer3">2 Point Answer:</label>
+              <input type="text" id="answer3" class="pointans" placeholder="Answer" />
+            </div>
+            <div>
+              <label for="answer4">1 Point Answer:</label>
+              <input type="text" id="answer4" class="pointans" placeholder="Answer" />
+            </div>
+          </div>
+        </div>
+        
+          <div class="alt-ans-cont">
+            <label for="alternateAnswer">Alternate Answer:</label>
+            <input
+              type="text"
+              id="alternateAnswer"
+              class="alt-ans"
+              placeholder="Alternate Answer"
+            />
+          </div>
+
+          <div class="form-row tags-sec">
+            <label for="feudTags">Tags:</label>
+            <input
+              type="text"
+              id="feudTags"
+              class="feudTags"
+              name="feudTags"
+              placeholder="Enter tags, separated by commas"
+            />
+          </div>
+
+          <div class="qi-row qi-action-buttons quiz-action-buttons">
+            <button type="button" id="clearFeudForm" class="qi-button qi-button-clear">
+              Clear
+            </button>
+            <button type="button" id="editFeudQuestion" class="qi-button qi-button-edit edit-question-btn">
+              Edit
+            </button>
+            <button type="submit" id="submitFeud" class="qi-button qi-button-submit">
+              Submit
+            </button>
+          </div>
+
+          <div class="form-row search-quest">
+            <label for="searchFeudQuestions">Search Questions:</label>
+            <input
+              type="text"
+              id="searchFeudQuestions"
+              class="feudTags"
+              name="searchQuestions"
+              placeholder="Search existing questions..."
+            />
+          </div>
+          <div id="questionsDisplayFeud" class="questions-display"></div>
+          </form>
+     </section>
+    </section>
+
+            <!-- Movie fields form -->
+      <section class="mov">
+        <input type="hidden" id="selectedMovieIdLeft">
+            <section class="moviesSecLeft" id="moviesSecLeft" style="display: none;">
+              <form id="movieForm" action="/submit-movie" method="POST" enctype="multipart/form-data">
+              <p class="question-count">
+                <strong>Questions in Category:</strong><span id="questionCount">0</span>
+              </p>
+              <!-- Category Selection -->
+              <div class="qi-row new-check-row2">
+                <label for="imageCategoryMovie" class="category-label">Select Category:</label>
+                <select id="categoryQuestions" name="categoryName" class="qi-selectCategory">
+                  <option value="american-history">American History</option>
+                  <option value="geography">Geography</option>
+                  <option value="sports">Sports</option>
+                  <option value="science-tech">Science & Tech</option>
+                  <option value="arts-literature">Arts & Literature</option>
+                  <option value="entertainment">Entertainment</option>
+                  <option value="nature">Nature</option>
+                  <option value="world-history">World History</option>
+                  <option value="music-rounds">Music Rounds</option>
+                  <option value="feud">Feud</option>
+                  <option value="wager-round">Wager Round</option>
+                  <option value="movies">Movies</option>
+                  <option value="add-category">Add Category</option>
+                </select>
+              </div>
+
+              <div class="music-editor-container">
+                <label for="movieFile">Upload Movie:</label>
+                <input
+                  type="file"
+                  id="movieFile"
+                  name="movieFile"
+                  accept="video/*"
+                  class="qi-uploadImage"
+                />
+                <video id="videoPlayer" width="100%" controls style="margin-top: 10px;"></video>
+                <div class="movie-controls-bgc">
+                  <button type="button" id="playPauseBtnMov" class="qi-button">Play</button>
+                  <button type="button" id="stopBtnMov" class="qi-button">Stop</button>
+                  <button type="button" id="applyCropBtnMov" class="qi-button">Crop</button>
+                  
+                  </div>
+                <div class="crop-controls">
+                  <label for="cropStart">Start (s):</label>
+                  <input
+                    type="number"
+                    id="cropStartMov"
+                    value="0"
+                    min="0"
+                    step="0.1"
+                    class="qi-uploadImage crop-input"
+                  />
+                  <label for="cropEnd">End (s):</label>
+                  <input
+                    type="number"
+                    id="cropEndMov"
+                    value="0"
+                    min="0"
+                    step="0.1"
+                    class="qi-uploadImage crop-input"
+                  />
+                </div>
+           
+                <div class="export-section">
+                  <button
+                    type="button"
+                    id="exportMovBtn"
+                    class="qi-button qi-button-submit"
+                  >
+                    Save / Export
+                  </button>
+                </div>
+              </div>
+
+                  <div class="music-input">
+                    <label for="songTitle" class="movLbl">Movie Title:</label>
+                    <input
+                      type="text"
+                      id="movieTitle"
+                      name="movieTitle"
+                      class="qi-uploadImage"
+                      placeholder="Enter movie title"
+                    />
+                  </div>
+                </div>
+  
+                <div class="music-input">
+                  <label for="wrongTitle" class="movLbl">Wrong Answers:</label>
+                  <input
+                    type="text"
+                    id="wrongAnswerMov"
+                    name="wrongAnswerMov"
+                    class="qi-uploadImage wrongAnswerMusic"
+                    placeholder="Enter Wrong Answers" style="margin-bottom: 10px;"
+                  />
+                </div>
+
+                <div class="music-input">
+                <label for="musicTags" class="movLbl">Tags:</label>
+                <input
+                  type="text"
+                  id="movieTagsMov"
+                  name="movieTagsMov"
+                  class="qi-uploadImage"
+                  placeholder="Enter tags, separated by commas"
+                />
+              </div>
+            </div>
+          </div>
+          </div>
+          
+            <div class="qi-row qi-action-buttons action-buttons1">
+              <button type="button" id="clearImageFormMovieLeft" class="qi-button qi-button-clear">
+                Clear
+              </button>
+              <button type="button" id="editImageMovieLeft" class="qi-button qi-button-edit editImageMovie">
+                Edit Movie
+              </button>
+              <button type="button" class="delete-image-movie" id="deleteImageMovieLeft">
+                <i class="fa fa-trash"></i> Delete Movie
+              </button>
+            </div>
+          
+            <div class="form-row right-row">
+              <label for="searchImagesMovie" class="qi-label">Search Movies:</label>
+              <input type="text" id="searchImagesMovie" name="searchImagesMovie" class="qi-uploadImage" placeholder="Search uploaded images...">
+            </div>
+            <input type="hidden" id="imageFileMovieLeft">
+            <div id="imageSearchResultsMovie" class="qi-search-results movieSearchRight"></div>
+          </section>   
+
+       <!-- Right section: Movies questions -->
+       <section class="moviesSecRight" id="moviesSec" style="display: none; width: 50%;">
+        <input type="hidden" id="selectedMovieIdRight">
+        <div id="imagePreviewMovie" class="imagePreviewMovie qi-image-preview-new">
+          <strong class="image-preview-text" id="image-preview-textMovie">
+            Drag and drop an image here, or select image from database
+          </strong>
+        </div>
+        
+        <div class="qi-row">
+          <input type="file" id="imageFileMovie" name="imageFileMovie" class="qi-input-file" accept="image/*">
+        </div>
+      
+        <div class="row" style="display: flex; gap: 0px; align-items: center;">
+        
+          <div class="button-container">
+            <button type="button" id="subMovieImg" class="btn btn-primary sub-img" name="subMovieImg">
+              Submit Image Only
+            </button>
+          </div>
+        </div>
+
+        <div class="form-row music-inputs">
+          <div class="music-input-pair">
+            <div class="music-input">
+              <label for="songTitle" class="movLbl">Movie Title:</label>
+              <input
+                type="text"
+                id="movieTitleRight"
+                name="movieTitleRight"
+                class="qi-uploadImage"
+                placeholder="Enter Movie Title"
+              />
+            </div>
+          </div>
+    
+      <div class="form-row tags-sec">
+        <label for="rightsecTagsMovie" class="movLbl">Tags:</label>
+        <input type="text" id="rightsecTagsMovie" class="rightsecTags" name="rightsecTagsMovie" placeholder="Enter tags, separated by commas">
+      </div>
+
+        <div class="qi-row qi-action-buttons action-buttons1">
+          <button type="button" id="clearImageFormMovieRight" class="qi-button qi-button-clear">
+            Clear
+          </button>
+          <button type="button" id="editImageMovieRight" class="qi-button qi-button-edit editImageMovie">
+            Edit
+          </button>
+          <button type="button" class="delete-image-movie" id="deleteImageMovieRight">
+            <i class="fa fa-trash"></i> Delete Image
+          </button>
+          <button type="button" id="subMovie" name="subMovie" class="qi-button qi-button-submit">
+            Submit
+          </button>
+        </div>
+
+        <div class="form-row right-row">
+          <label for="searchImagesMovie" class="qi-label">Search Images:</label>
+          <input type="text" id="searchImagesMovieRight" name="searchImagesMovie" class="qi-uploadImage" placeholder="Search uploaded images...">
+        </div>
+        <input type="hidden" id="imageFileMovieRight">
+        <div id="imageSearchResultsMovieRight" class="qi-search-results movieSearchRight"></div>
+      </form>
+    </section>
+  </section> 
+</section>
+
+            <!-- Wager form -->
+      <section class="wager">
+            <section class="wagerLeft" id="wagerLeft" style="display: none;">
+            <input type="hidden" id="selectedWagerIdLeft">
+              <form id="wagerForm" action="/submit-wager" method="POST" enctype="multipart/form-data">
+              <p class="question-count">
+                <strong>Questions in Category:</strong><span id="questionCount">0</span>
+              </p>
+              <!-- Category Selection -->
+              <div class="qi-row new-check-row2">
+                <label for="imageCategoryMovie" class="category-label">Select Category:</label>
+                <select id="categoryQuestions" name="categoryName" class="qi-selectCategory">
+                  <option value="american-history">American History</option>
+                  <option value="geography">Geography</option>
+                  <option value="sports">Sports</option>
+                  <option value="science-tech">Science & Tech</option>
+                  <option value="arts-literature">Arts & Literature</option>
+                  <option value="entertainment">Entertainment</option>
+                  <option value="nature">Nature</option>
+                  <option value="world-history">World History</option>
+                  <option value="music-rounds">Music Rounds</option>
+                  <option value="feud">Feud</option>
+                  <option value="wager-round">Wager Round</option>
+                  <option value="movies">Movies</option>
+                  <option value="add-category">Add Category</option>
+                </select>
+              </div>
+
+        
+        <div id="wagerImageLeft" class="hiddenWagerImage qi-image-preview-new">
+          <strong class="image-preview-text" id="image-preview-textMovie">
+            Drag and drop a hidden image here
+          </strong>
+        </div>
+
+        <div class="qi-row">
+          <input type="file" id="imageFileWagerLeft" name="imageFileWagerLeft" class="qi-input-file" accept="image/*">
+        </div>
+          
+            <div class="qi-row qi-action-buttons action-buttons1">
+              <button type="button" id="clearImageFormWagerLeft" class="qi-button qi-button-clear">
+                Clear
+              </button>
+              <button type="button" id="editImageWagerLeft" class="qi-button qi-button-edit">
+                Update Image
+              </button>
+              <button type="button" class="delete-image-movie" id="deleteImageWagerLeft">
+                <i class="fa fa-trash"></i> Delete Image
+              </button>
+            </div>
+          
+            <div class="form-row right-row">
+              <label for="searchImagesMovie" class="qi-label">Search Images:</label>
+              <input type="text" id="searchImagesWagerLeft" name="searchImagesWagerLeft" class="qi-uploadImage" placeholder="Search uploaded images...">
+            </div>
+            <input type="hidden" id="imageFileWagerSearchLeft">
+            <div id="imageSearchResultsWagerLeft" class="qi-search-results movieSearchRight"></div>
+          </section>   
+
+       <!-- Right section: Movies questions -->
+       <section class="wagerRight" id="wagerRight" style="display: none; width: 50%;">
+        <input type="hidden" id="selectedWagerIdRight">
+        <div id="wagerImageRight" class="imagePreviewMovie qi-image-preview-new">
+          <strong class="image-preview-text" id="image-preview-textMovie">
+            Drag and drop an image here, or select image from database
+          </strong>
+        </div>
+        
+        <div class="qi-row">
+          <input type="file" id="imageFileWagerRight" name="imageFileWagerRight" class="qi-input-file" accept="image/*">
+        </div>
+      
+        <div class="row" style="display: flex; gap: 0px; align-items: center;">
+          <div class="button-container">
+            <button type="button" id="subWagerImg" class="btn btn-primary sub-img" name="subWagerImg">
+              Submit Image Only
+            </button>
+          </div>
+        </div>
+
+        <div class="form-row music-inputs">
+          <div class="music-input-pair">
+            <div class="music-input">
+              <label for="songTitle" class="movLbl">Correct Answer:</label>
+              <input
+                type="text"
+                id="correctAnswerWager"
+                name="correctAnswerWager"
+                class="qi-uploadImage"
+                placeholder="Enter Movie Title"
+              />
+            </div>
+          </div>
+    
+      <div class="form-row tags-sec">
+        <label for="wrongAnswerWager" class="movLbl">Wrong Answer:</label>
+        <input type="text" id="wrongAnswerWager" class="rightsecTags" name="wrongAnswerWager" placeholder="Enter tags, separated by commas">
+      </div>
+
+      <div class="form-row tags-sec">
+        <label for="rightsecTagsWager" class="movLbl">Tags:</label>
+        <input type="text" id="rightsecTagsWager" class="rightsecTags" name="wager_tags" placeholder="Enter tags, separated by commas">
+      </div>
+
+        <div class="qi-row qi-action-buttons action-buttons1">
+          <button type="button" id="clearImageFormWagerRight" class="qi-button qi-button-clear">
+            Clear
+          </button>
+          <button type="button" id="editImageWagerRight" class="qi-button qi-button-edit editImageMovie">
+            Edit
+          </button>
+          <button type="button" class="delete-image-movie" id="deleteImageWagerRight">
+            <i class="fa fa-trash"></i> Delete Image
+          </button>
+          <button type="button" id="subWager" name="subWager" class="qi-button qi-button-submit">
+            Submit
+          </button>
+        </div>
+
+        <div class="form-row right-row">
+          <label for="searchImagesWager" class="qi-label">Search Images:</label>
+          <input type="text" id="searchImagesWagerRight" name="searchImagesWagerRight" class="qi-uploadImage" placeholder="Search uploaded images...">
+        </div>
+        <input type="hidden" id="imageFileWagerSearchRight">
+        <div id="imageSearchResultsWagerRight" class="qi-search-results movieSearchRight"></div>
+      </form>
+    </section>
+  </section> 
+</section>
+
+<!-- <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.min.js"></script> -->
+    <script src="script.js" defer></script>
+    <script src="https://unpkg.com/wavesurfer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.0/lame.min.js"></script>
+    
+</body>
+</html>

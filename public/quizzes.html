@@ -1,0 +1,226 @@
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Quizzes</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+    />
+  </head>
+  <body>
+        <div id="root"></div>
+        
+    <header class="top-nav">
+      <div class="logo-container">
+        <img src="logo_gradient.png" alt="Company Logo" class="logo" />
+      </div>
+      <nav class="nav-links">
+        <a href="dashboard.html">Home</a>
+        <a href="questionstab.html">Questions</a>
+        <a href="quizzes.html" class="active">Quizzes</a>
+        <a href="#">Users</a>
+        <a href="#">Venues</a>
+        <a href="#">Hosts</a>
+        <a href="#">Billing</a>
+        <a href="#">Analytics</a>
+      </nav>
+      <button class="sign-out">Sign Out</button>
+    </header>
+
+    <main>
+      <div id="quizzes-container">
+        <section id="quiz-schedule-input">
+          <h2>Quiz Scheduling Options</h2>
+
+          <label for="quizDate">Select Date:</label>
+          <input
+            type="text"
+            id="quizDate"
+            class="qi-text-input"
+            placeholder="Select date"
+            readonly
+          />
+
+          <label for="quizTime">Select Time Slot:</label>
+          <select id="quizTime" class="qi-select-quiz"></select>
+
+          <button id="suggest-quiz" class="btn-primary quiz-btn">Suggest Quiz</button>
+          <button id="generate-quiz" class="btn-primary quiz-btn">Generate New Quiz</button>
+          <button
+            id="edit-quiz"
+            class="btn-primary quiz-btn qi-hidden"
+            disabled
+          >
+            Edit Quiz
+          </button>
+          <button
+            id="approve-quiz"
+            class="btn-primary quiz-btn qi-hidden"
+            disabled
+          >
+            Approve Quiz
+          </button>
+          <button
+            id="schedule-quiz"
+            class="btn-primary quiz-btn qi-hidden"
+            disabled
+          >
+            Schedule Quiz
+          </button>
+        </section>
+
+        <section id="quiz-preview">
+          <h2>Quiz Preview</h2>
+          <div id="quiz-preview-content" class="quiz-preview-content">
+            <p>Click "Generate Quiz" or "Suggest Quiz" to preview the quiz structure.</p>
+          </div>
+          <div class="preview-navigation">
+            <button id="back-slide" class="btn-primary qi-hidden" disabled>
+              ← Back Slide
+            </button>
+            <button id="next-slide" class="btn-primary qi-hidden" disabled>
+              Next Slide →
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <div class="quiz-display-container" id="quiz-display">
+        <h2>Rounds &amp; Questions</h2>
+        <table id="rounds-table" class="quiz-table">
+          <thead>
+            <tr>
+              <th>Round #</th>
+              <th>Category</th>
+              <th>Content</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rounds-body"></tbody>
+        </table>
+        <div class="table-actions">
+          <input
+            type="text"
+            id="search-questions"
+            class="qi-text-input"
+            placeholder="Search questions..."
+            style="width: 70%; margin-top: 10px;"
+          />
+          <button
+            id="refresh-questions"
+            class="btn-primary"
+            style="margin-left: 10px;"
+          >
+            Refresh All
+          </button>
+        </div>
+        <button id="add-new-question" class="btn-primary" style="margin-top: 20px;">
+          Add New Question
+        </button>
+      </div>
+
+      <dialog id="custom-question-dialog" class="dialog">
+        <h3>Add New Question</h3>
+        <div class="dialog-content">
+          <label for="newCategory" class="qi-label">Select Category:</label>
+          <select id="newCategory" class="qi-select-quiz">
+            <option value="american-history">American History</option>
+            <option value="geography">Geography</option>
+            <option value="sports">Sports</option>
+            <option value="science-tech">Science & Tech</option>
+            <option value="who-am-i">Who Am I?</option>
+            <option value="name-that-song">Name That Song</option>
+            <option value="arts-literature">Arts & Literature</option>
+            <option value="random">Random</option>
+            <option value="entertainment">Entertainment</option>
+            <option value="nature">Nature</option>
+            <option value="name-that-artist">Name That Artist or Band!</option>
+            <option value="world-history">World History</option>
+            <option value="feud">Feud Round</option>
+            <option value="wager-round">Wager Round</option>
+            <option value="name-that-movie">Name That Movie</option>
+          </select>
+
+          <label for="newQuestionText">Enter Question:</label>
+          <textarea
+            id="newQuestionText"
+            class="qi-text-input"
+            rows="4"
+            placeholder="Type your question here..."
+          ></textarea>
+
+          <label for="newAnswer">Correct Answer:</label>
+          <input
+            type="text"
+            id="newAnswer"
+            class="qi-text-input"
+            placeholder="Enter the correct answer"
+          />
+
+          <label for="newWrongAnswers">Wrong Answers:</label>
+          <input
+            type="text"
+            id="newWrongAnswers"
+            class="qi-text-input"
+            placeholder="Enter wrong answers, separated by commas"
+          />
+
+          <label for="newTags">Tags:</label>
+          <input
+            type="text"
+            id="newTags"
+            class="qi-text-input"
+            placeholder="Enter tags, separated by commas"
+          />
+
+          <label for="newImage">Upload Image:</label>
+          <input
+            type="file"
+            id="newImage"
+            accept="image/*"
+            class="qi-input-file"
+          />
+          <div id="newImagePreview" class="qi-image-preview"></div>
+
+          <label for="newMultipleChoice">Multiple Choice Only:</label>
+          <input
+            type="checkbox"
+            id="newMultipleChoice"
+            name="newMultipleChoice"
+          />
+
+          <button id="save-new-question" class="btn-primary">Save Question</button>
+          <button id="close-custom-dialog" class="btn-primary">Close</button>
+        </div>
+      </dialog>
+
+      <dialog id="leaderboard-dialog" class="dialog">
+        <h3>Leaderboard</h3>
+        <div class="dialog-content">
+          <table id="leaderboard-table" class="quiz-table">
+            <thead>
+              <tr>
+                <th>Team</th>
+                <th>Score</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-body"></tbody>
+          </table>
+          <button id="close-leaderboard" class="btn-primary">Close</button>
+        </div>
+      </dialog>
+    </main>
+
+    <script src="script.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="static/js/main.8f41b38d.js"></script>
+  </body>
+  </html>

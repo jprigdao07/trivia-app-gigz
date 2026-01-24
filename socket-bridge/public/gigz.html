@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gigz Controller</title>
+  <style>
+        :root {
+    --primary-purple: #6a1b9a;
+    --gradient-start: #007adf;
+    --gradient-end: #00ecbc;
+    --gradient-hover-start: #005f99;
+    --gradient-hover-end: #008a75;
+    --background-light: rgb(222, 227, 228);
+    --white: #ffffff;
+    --gray-light: #f9f9f9;
+    --gray-medium: #ccc;
+    --text-dark: #333;
+    --error-red: #cc0000;
+    --shadow-light: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-medium: 0 6px 15px rgba(3, 3, 3, 0.15);
+    }
+
+    /* =============================== */
+    /* Global Reset & Default Styling */
+    /* =============================== */
+    * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      height: 120vh;
+      background: #f9fafb;
+    }
+
+    button {
+    position: relative;
+    z-index: 9999;
+    pointer-events: auto !important;
+}
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px;
+      background: #374151;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 0;
+    }
+    .sidebar h2 {
+      margin: 0 0 20px 20px;
+      font-size: 1.8rem;
+      color: #addbe4;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px;
+      color: #d1d5db;
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: background 0.2s;
+    }
+    .nav-item:hover {
+      background: #4b5563;
+      color: #fff;
+    }
+    .nav-item i {
+      margin-right: 10px;
+    }
+
+    /* Main layout */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: url('trivia-app.PNG') no-repeat center center fixed;
+      background-size: cover;
+    }
+
+    /* Content */
+    .content {
+        flex: 1 1 45%;
+        /* background: var(--background-light);
+        opacity: 50%;
+        padding: 25px; */
+        color: rgb(247, 248, 247);
+        /* border-radius: 10px;
+        border-top: 5px solid var(--primary-purple); */
+        transition: box-shadow 0.3s ease, transform 0.2s ease;
+        box-shadow: var(--shadow-medium), var(--shadow-light);
+        min-width: 300px;
+        margin: 20px;
+    }
+    
+    .content h1 {
+      margin: 0 0 15px;
+      font-size: 1.5rem;
+      color: #be7ebb;
+    }
+    .content h2 {
+      margin: 0 0 20px;
+      font-size: 1.2rem;
+      color: #374151;
+    }
+    .controls {
+      margin-bottom: 20px;
+    }
+    .controls button {
+      margin-right: 10px;
+      padding: 15px;
+      border: 1px solid #d1d5db;
+      border-radius: 5px;
+      color: white;
+      background: linear-gradient(135deg, rgb(0, 122, 223), rgb(0, 236, 188));
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .controls button:hover {
+      background: #f3f4f6;
+      color: #333;
+    }
+    .question-box {
+      border: 1px solid #d1d5db;
+      border-radius: 5px;
+      padding: 30px;
+      background: #fff;
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .scoreboard-container {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 10px;
+  }
+
+  .team {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 10px 20px;
+    background-color: #f7f7f7;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  button {
+    font-size: 18px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+
+  input.score {
+    width: 60px;
+    text-align: center;
+    font-size: 18px;
+  }
+
+/* ===== TEAMS PAGE ===== */
+#teams {
+  padding: 25px;
+}
+
+.add-team {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.add-team input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.add-team button {
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.add-team button:hover {
+  background: #218838;
+}
+
+.team-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.team-card {
+  background: #be7ebb;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 1rem;
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: absolute;
+  z-index: 1;
+  cursor: grab;
+  user-select: none;
+}
+
+.team-card.scored {
+  background-color: #cccccc !important;
+  opacity: 0.5;
+  filter: grayscale(100%);
+  pointer-events: auto;
+}
+
+#teamList {
+  position: relative; /* IMPORTANT */
+  min-height: 100px;  /* so cards have space */
+}
+
+.team-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.team-card h3 {
+  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.team-card p {
+  margin: 0.5rem 0;
+  color: #555;
+}
+
+.team-card.dragging {
+  cursor: grabbing;
+  opacity: 0.8;
+  z-index: 9999;
+}
+
+#scoringModal .team-score,
+#scoringModal .question-item span {
+  color: black !important;
+}
+
+.remove-team-btn {
+  background: #ff5252;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.remove-team-btn:hover {
+  background: #e53935;
+}
+
+/* ===== DRAG/REORDER MODE ===== */
+.team-list.drag-mode .team-card {
+  cursor: grab;
+  border: 2px dashed #007bff;
+}
+
+/* ===== Dashboard Styling ===== */
+#dashboard {
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  color: #fff;
+  overflow-y: auto;
+  font-family: 'Poppins', sans-serif;
+}
+
+#dashboard h1 {
+  font-size: 2.4rem;
+  margin-bottom: 10px;
+  color: #00d8ff;
+  text-shadow: 0 0 10px rgba(0, 216, 255, 0.4);
+}
+
+#dashboard p {
+  font-size: 1rem;
+  opacity: 0.9;
+  margin-bottom: 30px;
+}
+
+/* ===== Dashboard Controls ===== */
+.dashboard-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 30px;
+  width: 90%;
+  max-width: 600px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.dashboard-controls label {
+  font-weight: 600;
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+}
+
+.dashboard-controls input[type="datetime-local"] {
+  background: #2f2f4f;
+  border: none;
+  color: #fff;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 350px;
+}
+
+.dashboard-controls button {
+  background: #00d8ff;
+  border: none;
+  color: #000;
+  font-weight: 600;
+  padding: 12px 25px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 5px;
+}
+
+.dashboard-controls button:hover {
+  background: #00b4cc;
+  transform: scale(1.05);
+}
+
+.countdown-display {
+  margin-top: 20px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ===== Session Info Section ===== */
+.session-info {
+  /* border: 1px solid rgba(255, 255, 255, 0.15); */
+  border-radius: 20px;
+  padding: 25px 30px;
+  width: 90%;
+  max-width: 600px;
+  text-align: left;
+}
+
+.session-info h3 {
+  color: #00d8ff;
+  margin-bottom: 15px;
+}
+
+.session-info input {
+  background: #2f2f4f;
+  border: none;
+  color: #fff;
+  padding: 10px;
+  border-radius: 10px;
+  width: 60%;
+  margin-right: 10px;
+}
+
+.session-info button {
+  background: #00d8ff;
+  color: #000;
+  font-weight: bold;
+  border: none;
+  border-radius: 10px;
+  padding: 10px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.session-info button:hover {
+  background: #00b4cc;
+}
+
+#showFinalScoresBtn{
+  background: #00b4cc;
+}
+
+#sessionStatus {
+  color: #4eff7a;
+  font-weight: bold;
+}
+
+.session-info button{
+      margin-right: 10px;
+      padding: 15px;
+      border: 1px solid #d1d5db;
+      border-radius: 5px;
+      color: white;
+      background: linear-gradient(135deg, rgb(0, 122, 223), rgb(0, 236, 188));
+      cursor: pointer;
+      font-size: 0.9rem;
+}
+
+.teams-header button{
+      margin-right: 10px;
+      padding: 15px;
+      border: 1px solid #d1d5db;
+      border-radius: 5px;
+      color: white;
+      background: linear-gradient(135deg, rgb(0, 122, 223), rgb(0, 236, 188));
+      cursor: pointer;
+      font-size: 0.9rem;
+}
+
+/* Modal base styling */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 99999;               /* Increased so it sits above all content */
+  inset: 0;                     /* shorthand for left:0; top:0; width:100%; height:100% */
+  background-color: rgba(0,0,0,0.6);
+  justify-content: center;
+  align-items: center;
+}
+
+/* Show modal */
+.modal.show {
+  display: flex;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 20px 30px;
+  border-radius: 12px;
+  width: 350px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  position: relative;
+  z-index: 100000;              /* Ensures modal box is above overlay */
+}
+
+.modal-content h2 {
+  margin-bottom: 15px;
+}
+
+.modal-content input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  margin-bottom: 20px;
+  font-size: 16px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+}
+
+.modal-actions button {
+  flex: 1;
+  margin: 0 5px;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.modal-actions #saveTeamBtn {
+  background-color: #007bff;
+  color: white;
+}
+
+.modal-actions .cancel {
+  background-color: #ccc;
+}
+
+.close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.quiz-message {
+  background: #28a745;
+  color: white;
+  padding: 12px 18px;
+  border-radius: 6px;
+  font-size: 16px;
+  margin-bottom: 12px;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Navbar */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(135deg, rgb(0, 122, 223), rgb(0, 236, 188));
+      padding: 15px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .navbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .navbar h2 {
+      margin: 0;
+      font-size: 20px;
+      color: #00e0ff;
+    }
+
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    .navbar-links {
+      display: flex;
+      gap: 20px;
+      transition: all 0.3s ease;
+    }
+
+    .navbar-links a {
+      color: #be7ebb;
+      text-decoration: none;
+      font-size: 16px;
+    }
+
+    .navbar-links a.active,
+    .navbar-links a:hover {
+      color: #00e0ff;
+    }
+
+    /* Responsive Navbar */
+    @media (max-width: 768px) {
+      .menu-toggle {
+        display: block;
+      }
+
+      .navbar-links {
+        display: none;
+        flex-direction: column;
+        background: #222;
+        position: absolute;
+        top: 60px;
+        left: 0;
+        width: 100%;
+        border-top: 1px solid #333;
+      }
+
+      .navbar-links.show {
+        display: flex;
+      }
+
+      .navbar-links a {
+        padding: 10px;
+        text-align: center;
+        border-bottom: 1px solid #333;
+      }
+    }
+
+  /* Dashboard Styles */
+
+  .dash-div {
+  padding: 2rem;
+  color: #222;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.stat-card {
+  background: #fff;
+  padding: 1.2rem;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.stat-card h2 {
+  font-size: 2rem;
+  color: #6a1b9a;
+}
+
+.quiz-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.quiz-table th, .quiz-table td {
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+
+.quiz-table th {
+  background: #f7f7f7;
+  font-weight: 600;
+}
+
+.badge {
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: white;
+}
+.badge.live { background: #28a745; }
+.badge.scheduled { background: #007bff; }
+.badge.ended { background: #6c757d; }
+
+.quick-actions {
+  margin-top: 2rem;
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+button.btn-primary,
+button.btn-secondary,
+button.btn-tertiary,
+button.btn-outline {
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.btn-primary { background: linear-gradient(90deg, #6a1b9a, #8e24aa); color: white; }
+.btn-secondary { background: linear-gradient(90deg, #007adf, #00ecbc); color: white; }
+.btn-tertiary { background: linear-gradient(90deg, #ff9800, #ffc107); color: white; }
+.btn-outline { border: 2px solid #6a1b9a; color: #6a1b9a; background: none; }
+
+button:hover { opacity: 0.9; }
+
+.nextBtn {
+    bottom: 20px;
+    font-size: 20px;
+    left: 50%;
+    padding: 12px 32px;
+    position: fixed;
+    transform: translateX(-50%);
+}
+
+  </style>
+</head>
+<body>
+
+
+<!-- Main -->
+<div class="main">
+
+  <!-- Sidebar -->
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <h2>🎮 Gigz</h2>
+      <button class="menu-toggle" id="menuToggle">☰</button>
+    </div>
+
+    <div class="navbar-links" id="navbarLinks">
+      <a href="#" class="nav-item active" data-target="dashboard"><i>🏠</i> Dashboard</a>
+    <a href="#" class="nav-item" data-target="rounds"><i>🎯</i>  Navigation</a>
+    <!-- <a href="#" class="nav-item" data-target="teams"><i>🧭</i> Navigation</a> -->
+      <a href="#" class="nav-item" data-target="scoreboard"><i>🏆</i> Scoreboard</a>
+      <a href="#" class="nav-item" data-target="settings"><i>⚙️</i> Settings</a>
+    </div>
+  </nav>
+  
+  <div class="content">
+<section id="dashboard" class="page active">
+  <div class="dash-div">
+    <h1>🎮 Gigz Controller Dashboard</h1>
+    <p>Welcome back, Host! Here’s an overview of your quiz activities.</p>
+
+    <!-- === STATS OVERVIEW === -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h2>5</h2>
+        <p>Active Quizzes</p>
+      </div>
+      <div class="stat-card">
+        <h2>12</h2>
+        <p>Total Teams</p>
+      </div>
+      <div class="stat-card">
+        <h2>3</h2>
+        <p>Live Locations</p>
+      </div>
+      <div class="stat-card">
+        <h2>128</h2>
+        <p>Total Players</p>
+      </div>
+    </div>
+
+    <!-- === RECENT QUIZZES === -->
+    <div class="recent-quizzes">
+      <h2>🧩 Recent Quizzes</h2>
+      <table class="quiz-table">
+        <thead>
+          <tr>
+            <th>Quiz Name</th>
+            <th>Location</th>
+            <th>Status</th>
+            <th>Players</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>General Trivia Night</td>
+            <td>Downtown Pub</td>
+            <td><span class="badge live">Live</span></td>
+            <td>24</td>
+            <td><button class="btn-start">View</button></td>
+          </tr>
+          <tr>
+            <td>Science Challenge</td>
+            <td>City Library</td>
+            <td><span class="badge scheduled">Scheduled</span></td>
+            <td>18</td>
+            <td><button class="btn-start">Start</button></td>
+          </tr>
+          <tr>
+            <td>Music Mania</td>
+            <td>Campus Hall</td>
+            <td><span class="badge ended">Ended</span></td>
+            <td>30</td>
+            <td><button class="btn-start">Review</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- === QUICK ACTIONS === -->
+    <div class="quick-actions">
+      <h2>⚡ Quick Actions</h2>
+      <div class="actions-grid">
+        <button class="btn-primary">➕ Create New Quiz</button>
+        <button class="btn-secondary">📅 Schedule Quiz</button>
+        <button class="btn-tertiary">👥 Manage Teams</button>
+        <button class="btn-outline">📊 View Reports</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="scoreboard" class="page">
+  <!-- <h1>👥 Team Management & Scoreboard</h1> -->
+  <div class="teams-header">
+    <button id="addTeamBtn">➕ Add Team</button>
+    <button id="showFinalScoresBtn" class="primary-button">Show Final Scores</button>
+  </div>
+  
+    <div class="session-info">
+    <div id="teamList" class="team-list">
+    <!-- Team cards will populate here -->
+     </div>
+  </div>
+
+  <!-- Add Team Modal -->
+  <div id="addTeamModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Add New Team</h2>
+
+      <label for="newTeamName">Team Name</label>
+      <input type="text" id="newTeamName" placeholder="Enter team name">
+
+      <!-- <label for="teamLocation">Location</label>
+      <input type="text" id="teamLocation" placeholder="Enter location (e.g., Cebu City)">
+ -->
+      <div class="modal-actions">
+        <button id="saveTeamBtn">Save</button>
+        <button id="cancelTeamBtn" class="cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="scoringModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2 id="scoringTeamName"></h2>
+    <div id="questionsList"></div>
+    <!-- <button id="saveScoresBtn">Save Scores</button> -->
+  </div>
+</div>
+<div class="session-info">
+<button
+  id="nextBtn" class="nextBtn" style="width: 10%; margin-bottom: 10px; padding: 30px;"
+>
+  Next
+</button>
+    </div>
+</section>
+
+    <!-- Rounds Control -->
+<section id="rounds" class="page">
+  
+      <div class="round-div" style="display: flex; flex-direction: column; align-items: center;">
+      <!-- <h1>Rounds Control</h1>
+      <h2 id="round-info">Round 1: Question 1</h2> -->
+      <div class="controls">
+        <div id="quizMessage" class="quiz-message" style="display:none;"></div>
+        <!-- <button id="prevBtn" disabled>Previous Question</button>
+        <button id="skipBtn" disabled>Skip / Random Question</button> -->
+      </div>
+    <!-- <div class="dashboard-controls">
+  </div> -->
+
+  <!-- <div id="countdownDisplay" class="countdown-display">No countdown active</div> -->
+  <div class="session-info">
+  <h3>Game ID:</h3><input type="text" id="gameIdInput" placeholder="Enter Game ID" style="padding: 10px; width: 100%; margin-bottom: 10px;" />
+    <!-- <button id="nextBtn" class="nextBtn" style="width: 100%; margin-bottom: 10px; padding: 30px;">Next</button> -->
+      <h3>SCHEDULE</h3>
+
+     <div id="quizList" class="left-panel" style="
+        width: 100%;
+        min-height: 100%;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 20px;
+        padding: 10px;
+        overflow-y: auto;
+        max-height: 200px; /* adjust height as needed */
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: #00bcd4 #111;
+  ">
+      <!-- Quizzes populated by JS -->
+  </div>
+    <!-- <button id="startNowBtn" style="width: 100%; padding: 30px; color: white;">Generate New Quiz</button> -->
+    <button id="startQuizBtn" class="btn-ready" style="width: 100%; padding: 30px; color: white;">Start Quiz</button>
+  </div>
+    </section>
+
+    <!-- Settings -->
+    <section id="settings" class="page">
+      <h1>⚙️ Settings</h1>
+      <p>Settings panel under development.</p>
+    </section>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const connectBtn = document.getElementById("connectBtn");
+  const roundsSection = document.getElementById("rounds");
+
+  connectBtn.addEventListener("click", async () => {
+    const socket = io("http://localhost:8080", { auth: { role: "controller" } });
+
+    socket.on("connect", () => {
+      console.log("✅ Connected to server as controller:", socket.id);
+      connectBtn.disabled = true;
+      connectBtn.textContent = "Connected";
+
+      // Show rounds section and scroll
+      document.querySelectorAll(".page").forEach(p => p.style.display = "none");
+      roundsSection.style.display = "block";
+      roundsSection.scrollIntoView({ behavior: "smooth" });
+    });
+  });
+});
+</script>
+
+<!-- ✅ Load Socket.IO client BEFORE using io() -->
+<script src="http://localhost:8080/socket.io/socket.io.js"></script>
+<script src="script.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const navItems = document.querySelectorAll(".nav-item");
+  const pages = document.querySelectorAll(".page");
+
+  navItems.forEach(item => {
+    item.addEventListener("click", e => {
+      e.preventDefault();
+      const target = item.getAttribute("data-target");
+
+      // Hide all pages
+      pages.forEach(p => (p.style.display = "none"));
+      navItems.forEach(n => n.classList.remove("active"));
+
+      // Show selected
+      const activePage = document.getElementById(target);
+      if (activePage) {
+        activePage.style.display = "block";
+        item.classList.add("active");
+        console.log(`📄 Switched to page: ${target}`);
+      }
+    });
+  });
+});
+</script>
+
+  <!-- ✅ Toggle Script -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const menuToggle = document.getElementById("menuToggle");
+      const navbarLinks = document.getElementById("navbarLinks");
+
+      menuToggle.addEventListener("click", () => {
+        navbarLinks.classList.toggle("show");
+      });
+
+      // Page switching
+      const navItems = document.querySelectorAll(".nav-item");
+      const pages = document.querySelectorAll(".page");
+
+      navItems.forEach(item => {
+        item.addEventListener("click", e => {
+          e.preventDefault();
+          const target = item.getAttribute("data-target");
+
+          // Hide all pages
+          pages.forEach(p => (p.style.display = "none"));
+          navItems.forEach(n => n.classList.remove("active"));
+
+          // Show selected page
+          const activePage = document.getElementById(target);
+          if (activePage) {
+            activePage.style.display = "block";
+            item.classList.add("active");
+          }
+
+          // Hide menu after selecting (for mobile)
+          navbarLinks.classList.remove("show");
+        });
+      });
+    });
+
+
+  </script>
+</body>
+</html>

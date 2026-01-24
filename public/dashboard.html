@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+</head>
+
+<body>
+  <header class="top-nav">
+    <div class="logo-container">
+      <img src="logo_gradient.png" alt="Logo" class="logo" />
+    </div>
+    <nav class="nav-links">
+      <a href="dashboard.html" class="active">Home</a>
+      <a href="questionstab.html">Questions</a>
+      <a href="quizzes_tab.html">Quizzes</a>
+      <a href="#">Users</a>
+      <a href="#">Venues</a>
+      <a href="#">Hosts</a>
+      <a href="#">Billing</a>
+      <a href="#">Analytics</a>
+    </nav>
+    <button class="sign-out">Sign Out</button>
+  </header>
+
+  <main class="dashboard-container">
+    <div class="analytics-grid">
+      <div class="analytics-box revenue-box">
+        <h2>Revenue (Daily)</h2>
+        <p id="revenue-daily">$0.00</p>
+      </div>
+      <div class="analytics-box revenue-box">
+        <h2>Revenue (Weekly)</h2>
+        <p id="revenue-weekly">$0.00</p>
+      </div>
+      <div class="analytics-box revenue-box">
+        <h2>Revenue (Monthly)</h2>
+        <p id="revenue-monthly">$0.00</p>
+      </div>
+      <div class="analytics-box revenue-box">
+        <h2>Revenue (Yearly)</h2>
+        <p id="revenue-yearly">$0.00</p>
+      </div>
+    </div>
+
+    <div class="analytics-grid">
+      <div class="analytics-box analytics">
+        <h2>Total Quizzes</h2>
+        <p id="total-quizzes">0</p>
+      </div>
+      <div class="analytics-box analytics">
+        <h2>Active Quizzes</h2>
+        <p id="active-quizzes">0</p>
+      </div>
+      <div class="analytics-box analytics">
+        <h2>Inactive Quizzes</h2>
+        <p id="inactive-quizzes">0</p>
+    </div>
+        <div class="analytics-box analytics">
+        <h2>Active Players</h2>
+        <p id="active-players" type="hidden">0</p>
+    </div>
+    </div>
+
+    <div class="chart-container">
+      <div id="lineChart" class="chart"></div>
+      <div id="pieChart" class="chart"></div>
+  </div>
+  </main>
+
+  <script>
+async function fetchDashboardData() {
+  try {
+    const response = await fetch("http://localhost:4001/dashboard-data");
+    const data = await response.json();
+    console.log("Dashboard data:", data);
+
+    // 🔹 Numbers
+    document.getElementById("total-quizzes").textContent    = data.totalQuizzes;
+    document.getElementById("active-quizzes").textContent   = data.activeQuizzes;
+    document.getElementById("inactive-quizzes").textContent = data.inactiveQuizzes;
+    document.getElementById("active-players").textContent   = data.activePlayers;
+
+    // 🔹 Line Chart (activity over time)
+    const dates   = data.activity.map(row => new Date(row.quizDate).toLocaleDateString());
+    const created = data.activity.map(row => row.createdQuizzes);
+    const active  = data.activity.map(row => Number(row.activeQuizzes));
+
+    const lineChart = echarts.init(document.getElementById("lineChart"));
+    lineChart.setOption({
+      title: { text: "Quiz Activity Over Time", left: "center" },
+      tooltip: { trigger: "axis" },
+      legend: { data: ["Created Quizzes", "Active Quizzes"], top: 30 },
+      xAxis: { type: "category", data: dates },
+      yAxis: { type: "value" },
+      series: [
+        { name: "Created Quizzes", type: "line", data: created, smooth: true, lineStyle: { color: "#ff9800" } },
+        { name: "Active Quizzes",  type: "line", data: active,  smooth: true, lineStyle: { color: "#28a745" } }
+      ]
+    });
+
+    // 🔹 Pie Chart (distribution of active vs inactive quizzes)
+    const pieChart = echarts.init(document.getElementById("pieChart"));
+    pieChart.setOption({
+      title: { text: "Quizzes Status Distribution", left: "center" },
+      tooltip: { trigger: "item" },
+      legend: { orient: "horizontal", bottom: 10 },
+      series: [
+        {
+          name: "Quizzes",
+          type: "pie",
+          radius: "50%",
+          data: [
+            { value: data.activeQuizzes,   name: "Active Quizzes",   itemStyle: { color: "#28a745" } }, // green
+            { value: data.inactiveQuizzes, name: "Inactive Quizzes", itemStyle: { color: "#ff9800" } }  // orange
+          ]
+        }
+      ]
+    });
+
+    // 🔹 Handle resize
+    window.addEventListener("resize", () => {
+      lineChart.resize();
+      pieChart.resize();
+    });
+
+  } catch (error) {
+    console.error("Error fetching dashboard data:", error);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", fetchDashboardData);
+
+</script>
+
+  </script>
+</body>
+</html>
