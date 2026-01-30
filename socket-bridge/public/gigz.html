@@ -211,7 +211,32 @@
   padding: 1rem;
 }
 
+.team-card-div {
+  display: flex;
+  justify-content: space-between; /* name left, trash right */
+  align-items: center;            /* vertical center */
+  margin-bottom: 0.5rem;          /* optional spacing below header */
+}
+
+.remove-team-btn {
+  background: none;
+  border: none;
+  color: red;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 10px;                    
+}
+.remove-team-btn:hover {
+  transform: scale(1.2);
+}
+
 .team-card {
+   display: flex;
+  justify-content: space-between; /* name left, trash right */
+  align-items: center;            /* vertical center */
+  margin-bottom: 0.5rem;   
   background: #be7ebb;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -263,19 +288,7 @@
   color: black !important;
 }
 
-.remove-team-btn {
-  background: #ff5252;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 0.4rem 0.8rem;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
 
-.remove-team-btn:hover {
-  background: #e53935;
-}
 
 /* ===== DRAG/REORDER MODE ===== */
 .team-list.drag-mode .team-card {
@@ -403,9 +416,9 @@
   background: #00b4cc;
 }
 
-#showFinalScoresBtn{
+/* #showFinalScoresBtn{
   background: #00b4cc;
-}
+} */
 
 #sessionStatus {
   color: #4eff7a;
@@ -803,10 +816,10 @@ button:hover { opacity: 0.9; }
   <!-- <h1>👥 Team Management & Scoreboard</h1> -->
   <div class="teams-header">
     <button id="addTeamBtn">➕ Add Team</button>
-    <button id="showFinalScoresBtn" class="primary-button">Show Final Scores</button>
+    <p id="showFinalScoresBtn" class="primbutton"></p>
   </div>
   
-    <div class="session-info">
+    <div class="team-card-div">
     <div id="teamList" class="team-list">
     <!-- Team cards will populate here -->
      </div>

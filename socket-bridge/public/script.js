@@ -454,36 +454,49 @@ function getNextBtn() {
   return document.getElementById("nextBtn") || document.querySelector(".fixed-next-button");
 }
 
+function isLastRound() {
+  const totalRounds = window._allRounds?.length || 0;
+  return window.currentRoundIndex === totalRounds - 1;
+}
+
 function updateNextBtnState(canProceedParam) {
-  const nextBtn = document.getElementById("nextBtn");
+  const nextBtn = getNextBtn();
   if (!nextBtn) return;
 
   const pageType = window.currentPageType;
-  const ALWAYS_ALLOWED = [
-    "intro",
-    "rules",
-    "section",
-    "round-intro",
-    "answer-intro",
-    "scoreboard"
-  ];
+  const canProceed = canProceedParam ?? window.canProceed ?? false;
 
   let enable = false;
 
-  if (ALWAYS_ALLOWED.includes(pageType)) {
+  if (["intro", "rules", "section", "round-intro", "answer-intro", "scoreboard"]
+      .includes(pageType)) {
     enable = true;
-  } else if (pageType === "question") {
-    // Use passed canProceed OR fallback to global window.canProceed
-    const proceed = canProceedParam ?? window.canProceed ?? false;
-    enable = proceed === true;
-  } else if (pageType === "answers") {
-    enable = window.answersUnlocked === true;
+  }
+
+  if (pageType === "question" || pageType.startsWith("reveal-answer")) {
+    enable = canProceed;
+
+    // 🏁 Special label for Round 15, last answer revealed
+    if (window.currentRoundIndex === 14) { // 0-indexed, Round 15
+      const lastRevealPage = "reveal-answer-3"; // last answer page
+      if (pageType === lastRevealPage && enable) {
+        nextBtn.textContent = "Show Final Results 🏆";
+      } else {
+        nextBtn.textContent = "Next ➡️";
+      }
+    } else {
+      nextBtn.textContent = "Next ➡️";
+    }
   }
 
   nextBtn.disabled = !enable;
   nextBtn.style.opacity = enable ? "1" : "0.5";
 
-  console.log("➡️ NextBtn state:", { pageType, enable, canProceedParam, windowCanProceed: window.canProceed });
+  console.log(
+    `➡️ Next button: ${enable ? "ENABLED" : "DISABLED"} |`,
+    `Round ${window.currentRoundIndex + 1}`,
+    `Page: ${pageType}`
+  );
 }
 
 // ------------------------------
@@ -1178,8 +1191,9 @@ function markTeamScored(teamId, roundIndex) {
 // On page load
 document.addEventListener("DOMContentLoaded", () => {
   const nextBtn = document.getElementById("nextBtn");
+  window.finalRevealCount = 0; // 0 → 3
 
-  // Replace refreshNextButton with updateNextBtnState
+
   const updateNextBtnState = () => {
     if (!nextBtn) return;
 
@@ -1193,32 +1207,51 @@ document.addEventListener("DOMContentLoaded", () => {
       case "section":
       case "round-intro":
       case "answer-intro":
-        enableNext = true; // always enabled
+        enableNext = true;
         break;
 
       case "question": {
-        // ❌ default locked
         enableNext = false;
 
-        // safety guards
         if (!window.roundScores || !window.teams) break;
 
-        // 🟢 NORMAL ROUNDS → all teams must be scored
+        const allTeamsScored =
+          window.roundScores[roundIndex] &&
+          window.teams.every(
+            t => window.roundScores[roundIndex][t.id] === true
+          );
+
+        // 🟢 NORMAL ROUNDS
         if (window.currentRoundType === "normal") {
-          if (window.roundScores[roundIndex]) {
-            enableNext = window.teams.every(
-              t => window.roundScores[roundIndex][t.id] === true
-            );
-          }
+          enableNext = allTeamsScored;
         }
 
-        // 🟣 SPECIAL ROUNDS → explicit unlock only
+        // 🟣 SPECIAL ROUNDS
         if (window.currentRoundType === "special") {
           enableNext = window.specialRoundUnlocked === true;
         }
 
+        // 🏁 LAST ROUND → Show Top 3
+        if (enableNext && isLastRound()) {
+          nextBtn.textContent = "Show Top 3 Teams 🏆";
+        } else {
+          nextBtn.textContent = "Next ➡️";
+        }
+
         break;
       }
+
+      case "final-results": {
+      enableNext = true;
+
+      if (window.finalRevealCount < 3) {
+        nextBtn.textContent = "Reveal Next 🏆";
+      } else {
+        nextBtn.textContent = "Continue ➡️";
+      }
+      break;
+    }
+
 
       default:
         enableNext = false;
@@ -1235,33 +1268,57 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initial check
   updateNextBtnState();
 
-  // Listen for Next button click
-  nextBtn.addEventListener("click", () => {
-    if (nextBtn.disabled) return;
+// Listen for Next button click
+nextBtn.addEventListener("click", () => {
+  if (nextBtn.disabled) return;
 
-    // 📡 Emit proper roundIndex & gameId
-    const roundIndex = window.currentRoundIndex;
-    const gameId = window.currentGameId;
-    const currentPage = window.currentPageType;
-    console.log("📡 Next clicked on controller, emitting to quiz", { roundIndex, gameId, currentPage });
-    socket?.emit("controller:next", { roundIndex, gameId });
+  const roundIndex = window.currentRoundIndex;
+  const gameId = window.currentGameId;
+  const currentPage = window.currentPageType;
+
+  // 🏆 FINAL RESULTS – REVEAL FLOW
+if (currentPage === "final-results") {
+  if (window.finalRevealCount < 3) {
+    window.finalRevealCount++;
+
+    console.log(`🏆 Revealing winner ${window.finalRevealCount}`);
+    socket?.emit("controller:next", { gameId });
+
+    updateNextBtnState();
+    return; // ⛔ no navigation yet
+  }
+
+  // All revealed → navigate
+  console.log("🏁 Final reveal done, continuing");
+  socket?.emit("controller:next", { gameId }); // or navigate event
+  return;
+}
 
 
-  });
+  // 📡 NORMAL NEXT
+  console.log(
+    "📡 Next clicked on controller, emitting to quiz",
+    { roundIndex, gameId, currentPage }
+  );
+  socket?.emit("controller:next", { roundIndex, gameId });
+});
 
   // Update whenever a team is scored
   window.addEventListener("teamScored", updateNextBtnState);
 
-    // 🔹 Listen for "all teams scored" from the server
-socket.on('quiz:all-teams-scored', (data = {}) => {
-  const roundIndex = data.roundIndex ?? window.currentRoundIndex;
+  // 🔹 Server-side safety unlock
+  socket.on("quiz:all-teams-scored", (data = {}) => {
+    const roundIndex = data.roundIndex ?? window.currentRoundIndex;
 
-  window.roundScores = window.roundScores || [];
-  if (!window.roundScores[roundIndex]) window.roundScores[roundIndex] = {};
-  window.teams.forEach(t => window.roundScores[roundIndex][t.id] = true);
+    window.roundScores = window.roundScores || [];
+    if (!window.roundScores[roundIndex]) window.roundScores[roundIndex] = {};
 
-  updateNextBtnState();
-});
+    window.teams.forEach(t => {
+      window.roundScores[roundIndex][t.id] = true;
+    });
+
+    updateNextBtnState();
+  });
 
   // Call this when moving to a new round
   window.goToRound = (roundIndex) => {
@@ -1329,8 +1386,7 @@ function renderTeams() {
       <div class="team-header">
         <span>${team.name}</span>
       </div>
-      <button class="score-button">Score</button>
-      <button class="remove-team-btn">🗑 Remove</button>
+      <button class="remove-team-btn">🗑</button>
     `;
 
     // Attach scoring logic
@@ -1357,6 +1413,23 @@ function renderTeams() {
     teamList.appendChild(card);
   });
 }
+
+function showTop3Teams() {
+  // Convert object → sortable array
+  const sortedTeams = Object.entries(teamScores)
+    .map(([team, score]) => ({ team, score }))
+    .sort((a, b) => b.score - a.score);
+
+  // Get top 3
+  const top3 = sortedTeams.slice(0, 3);
+
+  // Send to TV / display app
+  sendTop3ToDisplay(top3);
+
+  // Optional: lock further scoring
+  scoringLocked = true;
+}
+
 
 // ===============================
 // 📌 ENABLE DRAGGING + CLICK

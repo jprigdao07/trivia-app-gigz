@@ -341,6 +341,36 @@ app.post('/api/teams', async (req, res) => {
 });
 
 // =====================================================
+// 📋 GET TOP 3 TEAMS
+// =====================================================
+app.get("/api/top-teams", async (req, res) => {
+  try {
+    const { gameId } = req.query;
+    if (!gameId) return res.status(400).json({ success: false, message: "gameId required" });
+
+    const [quiz] = await db.execute("SELECT auto_id FROM games WHERE id = ?", [gameId]);
+    if (!quiz.length) return res.status(400).json({ success: false, message: "Invalid gameId" });
+
+    const quiz_id = quiz[0].auto_id;
+
+    const [teams] = await db.execute(
+      `SELECT team_name, score 
+       FROM teams 
+       WHERE quiz_id = ? 
+       ORDER BY score DESC, team_name ASC 
+       LIMIT 3`,
+      [quiz_id]
+    );
+
+    res.json({ success: true, topTeams: teams });
+
+  } catch (err) {
+    console.error("❌ Error fetching top teams:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// =====================================================
 // 📋 GET TEAMS BY gameId (UUID from games table)
 // =====================================================
 app.get('/api/teams', async (req, res) => {
