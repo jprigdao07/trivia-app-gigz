@@ -8,7 +8,7 @@ window.nextEnabledByPage = {};
 window.roundScores = window.roundScores || {};    // { roundIndex: { teamId: boolean } }
 window.currentRoundIndex = window.currentRoundIndex || 1;
 window.canProceed = false; // ✅ replaces canProceedRef
-window.socketBridge = io("http://localhost:8080"); // global socket to communicate game ID updates
+window.socketBridge = io("http://192.168.1.77:8080"); // global socket to communicate game ID updates
 
 window.roundLocked = window.roundLocked || {};
 window.lastLockedRound = -1;
@@ -88,10 +88,37 @@ function openScoringModal(team) {
   const questionsList = document.getElementById("questionsList");
 
   // Clear previous content
-  teamNameEl.innerText = team.scored
-    ? `Edit Score: ${team.name}`
-    : `Scoring: ${team.name}`;
+  teamNameEl.innerHTML = `
+    <div style="
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    ">
+      <span>${team.scored ? `Edit Score: ${team.name}` : `Scoring: ${team.name}`}</span>
+      <button id="teamLeftBtn">Team Left</button>
+    </div>
+  `;
   questionsList.innerHTML = "";
+  
+    // ✅ Attach listener immediately to the new button
+const teamLeftBtn = document.getElementById("teamLeftBtn");
+
+if (teamLeftBtn) {
+  teamLeftBtn.onclick = async () => {
+    if (!currentScoringTeam) return;
+
+    const team = window.teams.find(t => t.id === currentScoringTeam.id);
+    if (!team) return;
+
+    if (!confirm(`Mark team "${team.name}" as LEFT?`)) return;
+
+    // ✅ Use same DELETE logic
+    markTeamLeft(team);
+
+    console.log(`Team "${team.name}" marked as LEFT and removed`);
+  };
+}
 
   const roundQuestions = ["Question 1", "Question 2", "Question 3"];
   const roundIndex = currentRoundIndex; // Always use current round
@@ -145,6 +172,7 @@ function openScoringModal(team) {
 
         await updateScore(1); // increment score
         await saveTeamAnswer(team.id, roundIndex, index, true); // pass roundIndex
+        renderTeams();
       };
 
       // ✅ Incorrect button click
@@ -153,6 +181,7 @@ function openScoringModal(team) {
         correctBtn.classList.remove("selected");
 
         await saveTeamAnswer(team.id, roundIndex, index, false); // pass roundIndex
+        renderTeams();
       };
 
       questionsList.appendChild(item);
@@ -184,6 +213,7 @@ function openScoringModal(team) {
 
   modal.classList.add("show");
 }
+
 
 // ------------------------------
 // Initialize round properly
@@ -283,7 +313,7 @@ function isCurrentRoundScored() {
 // === FETCH & CONNECT CONTROLLER ===
 async function fetchLatestGameId() {
   try {
-    const res = await fetch("http://localhost:8080/api/get-latest-game-id");
+    const res = await fetch("http://192.168.1.77:8080/api/get-latest-game-id");
     if (!res.ok) throw new Error("No latest game found.");
     const data = await res.json();
     console.log("✅ Latest Game ID:", data.id);
@@ -300,14 +330,14 @@ async function connectController(gameId) {
   console.log("🎮 Connecting controller:", gameId);
 
   // 1️⃣ Notify the bridge about the latest game
-  await fetch("http://localhost:8080/api/set-latest-game-id", {
+  await fetch("http://192.168.1.77:8080/api/set-latest-game-id", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ id: gameId })
   });
 
   // 2️⃣ Connect the controller socket
-  socket = io("http://localhost:8080", {
+  socket = io("http://192.168.1.77:8080", {
     auth: { role: "controller", token, gameId }
   });
 
@@ -550,7 +580,7 @@ function removeTeam(teamId) {
 // === POPULATE QUIZ LIST IN CONTROLLER APP ===
 async function populateQuizList() {
   try {
-    const response = await fetch('http://localhost:4001/api/quizzes');
+    const response = await fetch('http://192.168.1.77:4001/api/quizzes');
     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
     let quizzes = await response.json();
 
@@ -623,7 +653,7 @@ async function populateQuizList() {
   } catch (err) {
     console.error('❌ Failed to load quizzes:', err);
     document.getElementById('quizList').innerHTML =
-      `<p style="color:red;">Failed to load quizzes. Make sure server is running at http://localhost:4001</p>`;
+      `<p style="color:red;">Failed to load quizzes. Make sure server is running at http://192.168.1.77:4001</p>`;
   }
 }
 
@@ -636,7 +666,7 @@ async function handleQuizActivation(quizId) {
   try {
     if (!quizId) throw new Error("Invalid quizId");
 
-    const res = await fetch(`http://localhost:4001/api/quiz/${quizId}/activate`, {
+    const res = await fetch(`http://192.168.1.77:4001/api/quiz/${quizId}/activate`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" }
     });
@@ -761,7 +791,7 @@ if (!location) {
     }
 
     // 3️⃣ Create new quiz
-    const createRes = await fetch("http://localhost:4001/api/quizzes", {
+    const createRes = await fetch("http://192.168.1.77:4001/api/quizzes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -840,7 +870,7 @@ document.getElementById("startNowBtn")?.addEventListener("click", async () => {
       : new Date().toISOString().slice(0, 19).replace("T", " ");
 
     // 3️⃣ Create NEW game instance with placeholders
-    const gameRes = await fetch("http://localhost:4001/api/game-id", {
+    const gameRes = await fetch("http://192.168.1.77:4001/api/game-id", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -869,7 +899,7 @@ document.getElementById("startNowBtn")?.addEventListener("click", async () => {
     const allRounds = [];
     for (let i = 1; i <= 15; i++) {
       if ([6, 12, 15].includes(i)) continue;
-      const res = await fetch(`http://localhost:4001/api/rounds/${i}`);
+      const res = await fetch(`http://192.168.1.77:4001/api/rounds/${i}`);
       if (!res.ok) continue;
       const data = await res.json();
       if (!data?.questions?.length) continue;
@@ -884,7 +914,7 @@ document.getElementById("startNowBtn")?.addEventListener("click", async () => {
 
     // 6️⃣ Music rounds (6 & 12)
     for (const musicRound of [6, 12]) {
-      const musicRes = await fetch(`http://localhost:4001/api/music-round?round_type=${musicRound}`);
+      const musicRes = await fetch(`http://192.168.1.77:4001/api/music-round?round_type=${musicRound}`);
       if (!musicRes.ok) continue;
       const musicData = await musicRes.json();
       if (!musicData?.questions?.length) continue;
@@ -901,7 +931,7 @@ document.getElementById("startNowBtn")?.addEventListener("click", async () => {
     }
 
     // 7️⃣ Family Feud
-    const feudRes = await fetch("http://localhost:4001/api/round/feud");
+    const feudRes = await fetch("http://192.168.1.77:4001/api/round/feud");
     if (feudRes.ok) {
       const feudData = await feudRes.json();
       if (feudData?.question_text) {
@@ -919,7 +949,7 @@ document.getElementById("startNowBtn")?.addEventListener("click", async () => {
     }
 
     // 8️⃣ Movie round (15)
-    const movieRes = await fetch("http://localhost:4001/api/movie-round");
+    const movieRes = await fetch("http://192.168.1.77:4001/api/movie-round");
     if (movieRes.ok) {
       const movieData = await movieRes.json();
       if (movieData?.questions?.length) {
@@ -937,7 +967,7 @@ document.getElementById("startNowBtn")?.addEventListener("click", async () => {
     }
 
     // 9️⃣ Save quiz to quiz app
-    const quizRes = await fetch("http://localhost:4001/api/quizzes", {
+    const quizRes = await fetch("http://192.168.1.77:4001/api/quizzes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -956,7 +986,7 @@ document.getElementById("startNowBtn")?.addEventListener("click", async () => {
     if (!quizRes.ok) throw new Error("Failed saving quiz");
 
     // 🔟 Activate quiz
-    const activateRes = await fetch(`http://localhost:4001/api/quizzes/${newGameId}/activate`, {
+    const activateRes = await fetch(`http://192.168.1.77:4001/api/quizzes/${newGameId}/activate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" }
     });
@@ -1118,11 +1148,20 @@ function resetTeamCards() {
   console.log("🔹 Resetting all team cards for next round");
 
   window.teams.forEach(team => {
-    team.scored = false; // reset scored flag
+    // Reset only the scored flag, leave the left flag intact
+    team.scored = false;
 
     const teamCard = document.querySelector(`.team-card[data-team-id='${team.id}']`);
     if (teamCard) {
-      teamCard.classList.remove("scored"); // remove grey overlay
+      // Remove scored class only
+      teamCard.classList.remove("scored");
+
+      // If team is left, keep red, otherwise original color
+      if (team.left) {
+        teamCard.classList.add("team-left"); // red for left teams
+      } else {
+        teamCard.classList.remove("team-left");
+      }
     }
   });
 
@@ -1130,9 +1169,16 @@ function resetTeamCards() {
   const roundIndex = currentRoundIndex;
   if (window.roundScores[roundIndex]) {
     Object.keys(window.roundScores[roundIndex]).forEach(teamId => {
-      window.roundScores[roundIndex][teamId] = false;
+      // Only reset scores for active teams
+      const team = window.teams.find(t => t.id === parseInt(teamId));
+      if (team && !team.left) {
+        window.roundScores[roundIndex][teamId] = false;
+      }
     });
   }
+
+  // 🔹 Refresh Next button state
+  updateNextBtnState();
 }
 
 /// ------------------------------
@@ -1162,9 +1208,11 @@ function markTeamScored(teamId, roundIndex) {
   window.currentRoundIndex = roundIdx;
 
   // 🔹 Check if all teams scored
-  const allTeamsScored = window.teams.every(
-    t => window.roundScores[roundIdx][t.id] === true
-  );
+  const allTeamsScored =
+  window.roundScores[roundIdx] &&
+  window.teams
+    .filter(t => !t.left) // 👈 ignore teams marked as Left
+    .every(t => window.roundScores[roundIdx][t.id] === true);
 
   // Update global canProceed
   window.canProceed = allTeamsScored;
@@ -1215,11 +1263,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!window.roundScores || !window.teams) break;
 
-        const allTeamsScored =
-          window.roundScores[roundIndex] &&
-          window.teams.every(
-            t => window.roundScores[roundIndex][t.id] === true
-          );
+  const allTeamsScored =
+        window.roundScores[roundIndex] &&
+        window.teams
+        .filter(t => !t.left) // 👈 ignore teams that left
+        .every(t => window.roundScores[roundIndex][t.id] === true);
 
         // 🟢 NORMAL ROUNDS
         if (window.currentRoundType === "normal") {
@@ -1293,7 +1341,6 @@ if (currentPage === "final-results") {
   socket?.emit("controller:next", { gameId }); // or navigate event
   return;
 }
-
 
   // 📡 NORMAL NEXT
   console.log(
@@ -1378,8 +1425,14 @@ function renderTeams() {
     if (team.x) card.style.left = team.x;
     if (team.y) card.style.top = team.y;
 
-    if (team.scored) {
-      card.classList.add("scored");
+
+    card.classList.remove("team-left", "scored"); // reset
+
+    // 🔹 Apply visual states conditionally
+    if (team.left) {
+      card.classList.add("team-left"); // red/grey if they left
+    } else if (team.scored) {
+      card.classList.add("scored");    // grey if scored
     }
 
     card.innerHTML = `
@@ -1414,6 +1467,34 @@ function renderTeams() {
   });
 }
 
+//Rejoin Team Function
+function rejoinTeam(teamId) {
+  const team = window.teams.find(t => t.id === teamId);
+  if (!team) return;
+
+  // ✅ Clear Left state
+  team.left = false;
+
+  // ✅ Allow them to be scored again
+  team.scored = false;
+
+  // 🔹 Update the card directly
+  const card = document.querySelector(`.team-card[data-team-id='${team.id}']`);
+  if (card) {
+    card.classList.remove("team-left"); // remove red
+    if (team.scored) {
+      card.classList.add("scored");     // grey if scored
+    } else {
+      card.classList.remove("scored");  // remove grey if unscored
+    }
+  }
+
+  // 🔹 Refresh Next button state
+  updateNextBtnState();
+
+  console.log(`Team "${team.name}" has rejoined`);
+}
+
 function showTop3Teams() {
   // Convert object → sortable array
   const sortedTeams = Object.entries(teamScores)
@@ -1440,22 +1521,22 @@ function enableDragging(card) {
   let dragging = false;
   let moved = false;
 
-  card.addEventListener("mousedown", (e) => {
+  const startDrag = (clientX, clientY) => {
     dragging = true;
     moved = false;
     card.classList.add("dragging");
 
-    offsetX = e.clientX - card.offsetLeft;
-    offsetY = e.clientY - card.offsetTop;
+    offsetX = clientX - card.offsetLeft;
+    offsetY = clientY - card.offsetTop;
 
-    card.style.zIndex = "auto";
-  });
+    card.style.zIndex = "999";
+  };
 
-  document.addEventListener("mousemove", (e) => {
+  const moveDrag = (clientX, clientY) => {
     if (!dragging) return;
 
-    const newLeft = e.clientX - offsetX;
-    const newTop = e.clientY - offsetY;
+    const newLeft = clientX - offsetX;
+    const newTop = clientY - offsetY;
 
     if (!moved && (Math.abs(newLeft - card.offsetLeft) > 3 || Math.abs(newTop - card.offsetTop) > 3)) {
       moved = true;
@@ -1463,15 +1544,14 @@ function enableDragging(card) {
 
     card.style.left = `${newLeft}px`;
     card.style.top = `${newTop}px`;
-  });
+  };
 
-  document.addEventListener("mouseup", () => {
+  const endDrag = () => {
     if (!dragging) return;
     dragging = false;
 
     card.classList.remove("dragging");
 
-    // ✅ Save the final position into team object
     const teamId = parseInt(card.dataset.teamId);
     const team = window.teams.find(t => t.id === teamId);
 
@@ -1480,12 +1560,65 @@ function enableDragging(card) {
       team.y = card.style.top;
     }
 
-    // Bubble click if it wasn't a drag
     if (!moved) {
       card.dispatchEvent(new CustomEvent("cardclick", { bubbles: true }));
     }
+  };
+
+  // 🖱️ Mouse events
+  card.addEventListener("mousedown", (e) => {
+    startDrag(e.clientX, e.clientY);
   });
+
+  document.addEventListener("mousemove", (e) => {
+    moveDrag(e.clientX, e.clientY);
+  });
+
+  document.addEventListener("mouseup", endDrag);
+
+  // 📱 Touch events
+  card.addEventListener("touchstart", (e) => {
+    const touch = e.touches[0];
+    startDrag(touch.clientX, touch.clientY);
+  }, { passive: false });
+
+  document.addEventListener("touchmove", (e) => {
+    if (!dragging) return;
+    const touch = e.touches[0];
+    moveDrag(touch.clientX, touch.clientY);
+  }, { passive: false });
+
+  document.addEventListener("touchend", endDrag);
+}
+
+// ===============================
+// MARK TEAM LEFT / Remove
+// ===============================
+async function markTeamLeft(team) {
+  const roundIndex = window.currentRoundIndex;
+
+  // 1. Mark team as left for this session
+  team.left = true;
+
+  // 2. Mark as resolved so Next button becomes clickable
+  if (!window.roundScores[roundIndex]) {
+    window.roundScores[roundIndex] = {};
   }
+
+  // Treat as already "handled" for scoring logic
+  window.roundScores[roundIndex][team.id] = true;
+
+  // 3. Prevent further scoring
+  team.scored = true;
+
+  // 4. Re-render UI (team stays visible but greyed out)
+  renderTeams();
+
+  // 5. Update Next button state immediately
+  updateNextBtnState();
+
+  console.log(`Team "${team.name}" marked as LEFT (soft remove)`);
+}
 
 // ===============================
 // 📌 SETUP CLICK HANDLING ON TEAM CARDS
@@ -1505,26 +1638,39 @@ function setupTeamCardClicks() {
     // Open scoring modal
     window.currentScoringTeam = team;
     openScoringModal(team);
+
   });
+  
+    // ===============================
+    // 🔹 TEAM LEFT HANDLER
+    // ===============================
+const teamLeftBtn = document.getElementById("teamLeftBtn");
+
+if (teamLeftBtn) {
+  teamLeftBtn.onclick = () => {
+    if (!currentScoringTeam) return;
+
+    if (!confirm(`Mark team "${currentScoringTeam.name}" as LEFT?`)) return;
+
+    // Soft mark as left
+    markTeamLeft(currentScoringTeam.id);
+  };
+}
 
   // Listen for normal clicks for remove buttons
-  teamList.addEventListener("click", async (e) => {
-    const card = e.target.closest(".team-card");
-    if (!card) return;
+teamList.addEventListener("click", async (e) => {
+  const card = e.target.closest(".team-card");
+  if (!card) return;
 
-    const teamId = parseInt(card.dataset.teamId);
-    const team = window.teams.find(t => t.id === teamId);
-    if (!team) return;
+  const teamId = parseInt(card.dataset.teamId);
+  const team = window.teams.find(t => t.id === teamId);
+  if (!team) return;
 
-    // Remove button
-    if (e.target.classList.contains("remove-team-btn")) {
-      if (!confirm(`Remove team "${team.name}"?`)) return;
-      await fetch(`/api/teams/${team.id}`, { method: "DELETE" });
-      window.teams = window.teams.filter(t => t.id !== team.id);
-      renderTeams();
-      return;
-    }
-  });
+  if (e.target.classList.contains("remove-team-btn")) {
+    if (!confirm(`Remove team "${team.name}"?`)) return;
+    markTeamLeft(team);
+  }
+});
 }
 
 // ===============================
@@ -1685,7 +1831,7 @@ document.getElementById("showFinalScoresBtn").addEventListener("click", async ()
   console.log("📤 Sending request to show final scores...");
 
   try {
-    const res = await fetch("http://localhost:8080/api/show-final-scores", {
+    const res = await fetch("http://192.168.1.77:8080/api/show-final-scores", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
     });
@@ -1717,7 +1863,7 @@ document.getElementById("readyStartBtn")?.addEventListener("click", async () => 
     const teamCScore = parseInt(document.getElementById("teamCScore")?.value) || 0;
 
     // 2️⃣ Create new game / quiz instance
-    const createRes = await fetch("http://localhost:4001/api/quizzes", {
+    const createRes = await fetch("http://192.168.1.77:4001/api/quizzes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1746,7 +1892,7 @@ document.getElementById("readyStartBtn")?.addEventListener("click", async () => 
     if (typeof populateQuizList === "function") await populateQuizList();
 
     // 5️⃣ Activate quiz
-    const activateRes = await fetch(`http://localhost:4001/api/quizzes/${newGameId}/activate`, {
+    const activateRes = await fetch(`http://192.168.1.77:4001/api/quizzes/${newGameId}/activate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" }
     });
@@ -1792,7 +1938,7 @@ document.getElementById("readyStartBtn")?.addEventListener("click", async () => 
 // =============================================
 async function fetchScheduledStart(gameId) {
   try {
-    const res = await fetch(`http://localhost:8080/api/latest-countdown?gameId=${gameId}`);
+    const res = await fetch(`http://192.168.1.77:8080/api/latest-countdown?gameId=${gameId}`);
     const data = await res.json();
     return data.scheduledStart ? new Date(data.scheduledStart).getTime() : null;
   } catch (err) {
@@ -1806,7 +1952,7 @@ async function fetchScheduledStart(gameId) {
 // =============================================
 async function fetchLatestGameId() {
   try {
-    const res = await fetch("http://localhost:8080/api/get-latest-game-id");
+    const res = await fetch("http://192.168.1.77:8080/api/get-latest-game-id");
     const data = await res.json();
 
     if (data?.id) {
@@ -1824,7 +1970,7 @@ async function fetchLatestGameId() {
 
 // Initialize socket connection
 function initSocket(gameId) {
-  socket = io("http://localhost:8080", { auth: { role: "controller", gameId } });
+  socket = io("http://192.168.1.77:8080", { auth: { role: "controller", gameId } });
 
   socket.on("connect", () => {
     console.log("🎮 Controller socket connected:", socket.id);
@@ -1837,7 +1983,7 @@ function initSocket(gameId) {
 async function startQuizFromController(gameId) {
   try {
     // 1️⃣ Set active game
-    await fetch("http://localhost:8080/api/set-active-game", {
+    await fetch("http://192.168.1.77:8080/api/set-active-game", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ gameId })
@@ -1845,7 +1991,7 @@ async function startQuizFromController(gameId) {
     console.log("✅ Active game set:", gameId);
 
     // 2️⃣ Start quiz now
-    const res = await fetch("http://localhost:8080/api/start-quiz-now", {
+    const res = await fetch("http://192.168.1.77:8080/api/start-quiz-now", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ gameId })
@@ -1875,7 +2021,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Fetch or set current gameId
   let gameId = localStorage.getItem("currentGameId");
   if (!gameId) {
-    const res = await fetch("http://localhost:8080/api/get-latest-game-id");
+    const res = await fetch("http://192.168.1.77:8080/api/get-latest-game-id");
     const data = await res.json();
     if (!data?.id) return console.warn("No active game ID found");
     gameId = data.id;
@@ -1884,7 +2030,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   window.currentGameId = gameId;
 
   // --- Connect socket once ---
-  window.socket = io("http://localhost:8080", { auth: { role: "quiz", gameId } });
+  window.socket = io("http://192.168.1.77:8080", { auth: { role: "quiz", gameId } });
 
   window.socket.on("connect", () => {
     console.log("🎮 Controller socket connected:", window.socket.id);
@@ -1965,7 +2111,7 @@ startBtn.addEventListener("click", async () => {
     if (!gameId) return alert("⚠️ No quiz selected!");
 
     // Step 1: Set as active in backend
-    await fetch("http://localhost:8080/api/set-active-game", {
+    await fetch("http://192.168.1.77:8080/api/set-active-game", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ gameId })
@@ -2033,7 +2179,7 @@ if (typeof socket !== "undefined") {
 // -------------------------
 async function getLatestActiveQuizId() {
   try {
-    const response = await fetch("http://localhost:4001/api/quizzes");
+    const response = await fetch("http://192.168.1.77:4001/api/quizzes");
     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
     let quizzes = await response.json();
 

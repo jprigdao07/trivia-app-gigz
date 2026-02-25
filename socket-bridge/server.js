@@ -12,7 +12,10 @@ const PORT = 8080;
 const ALLOWED_ORIGINS = [
   'http://localhost:4001',
   'http://localhost:8080',
-  'http://localhost:3000'
+  'http://localhost:3000',
+  'http://192.168.1.77:8080',
+  'http://192.168.1.77:3000',
+  'http://192.168.1.77:4001'
 ];
 const CONTROLLER_SECRET = 'secret123';
 
@@ -336,6 +339,24 @@ app.post('/api/teams', async (req, res) => {
 
   } catch (err) {
     console.error('❌ Error adding team:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.delete('/api/teams/:id', async (req, res) => {
+  try {
+    const teamId = req.params.id;
+
+    // Delete team from database
+    const [result] = await db.execute(`DELETE FROM teams WHERE id = ?`, [teamId]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Team not found' });
+    }
+
+    res.json({ success: true, message: 'Team deleted successfully' });
+  } catch (err) {
+    console.error('❌ Error deleting team:', err);
     res.status(500).json({ success: false, message: err.message });
   }
 });

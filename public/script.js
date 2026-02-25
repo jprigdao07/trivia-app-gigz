@@ -150,7 +150,7 @@ if (musicSearchInput) {
 async function fetchCategories() {
   showLoading();
   try {
-    const response = await fetch('http://localhost:4001/categories');
+    const response = await fetch('http://192.168.1.77:4001/categories');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -211,7 +211,7 @@ categorySelects.forEach(select => {
   async function updateQuestionCount(categoryId) {
     try {
       const response = await fetch(
-        `http://localhost:4001/questions?category=${encodeURIComponent(categoryId)}`
+        `http://192.168.1.77:4001/questions?category=${encodeURIComponent(categoryId)}`
       );
       const data = await response.json();
       if (data.success) {
@@ -227,7 +227,7 @@ categorySelects.forEach(select => {
     if (categoryId === "feud") {
       try {
         const response = await fetch(
-          `http://localhost:4001/feud-questions?category=${encodeURIComponent(categoryId)}`
+          `http://192.168.1.77:4001/feud-questions?category=${encodeURIComponent(categoryId)}`
         );
         const data = await response.json();
         if (data.success) {
@@ -708,7 +708,7 @@ function updateQuestionCount(categoryId) {
 
     showLoading();
     try {
-      const response = await fetch("http://localhost:4001/add-feud-question", {
+      const response = await fetch("http://192.168.1.77:4001/add-feud-question", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(feudData)
@@ -809,7 +809,7 @@ async function fetchQuestions(categoryId) {
   showLoading();
   try {
     const response = await fetch(
-      `http://localhost:4001/questions?category=${encodeURIComponent(categoryId)}`
+      `http://192.168.1.77:4001/questions?category=${encodeURIComponent(categoryId)}`
     );
 
     const data = await response.json();
@@ -834,7 +834,7 @@ async function fetchSongsSearch(query) {
   showLoading();
 
   try {
-    const response = await fetch(`http://localhost:4001/music_questions/search?query=${encodeURIComponent(query)}`);
+    const response = await fetch(`http://192.168.1.77:4001/music_questions/search?query=${encodeURIComponent(query)}`);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -978,7 +978,7 @@ async function fetchFeudQuestions(categoryId) {
   showLoading();
   try {
     const response = await fetch(
-      `http://localhost:4001/feud-questions?category=${encodeURIComponent(categoryId)}`
+      `http://192.168.1.77:4001/feud-questions?category=${encodeURIComponent(categoryId)}`
     );
 
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -1096,7 +1096,7 @@ async function updateFeudQuestion() {
   ].filter(a => a.text);
 
   try {
-    const response = await fetch(`http://localhost:4001/update-feud-question/${feudId}`, {
+    const response = await fetch(`http://192.168.1.77:4001/update-feud-question/${feudId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ feudId, questionText, answers, alternateAnswer, tags })
@@ -1125,7 +1125,7 @@ searchQuestionsInput.addEventListener("input", async function () {
     try {
       if (categoryId === "music-rounds") {
         const response = await fetch(
-          `http://localhost:4001/songs?query=${encodeURIComponent(query)}`
+          `http://192.168.1.77:4001/songs?query=${encodeURIComponent(query)}`
         );
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -1151,7 +1151,7 @@ searchQuestionsInput.addEventListener("input", async function () {
         }
       } else {
         const response = await fetch(
-          `http://localhost:4001/questions?query=${encodeURIComponent(query)}`
+          `http://192.168.1.77:4001/questions?query=${encodeURIComponent(query)}`
         );
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -1244,7 +1244,7 @@ searchFeudQuestionsInput.addEventListener("input", async function () {
     showLoading();
     try {
       const response = await fetch(
-        `http://localhost:4001/feud-questions/search?query=${encodeURIComponent(query)}`
+        `http://192.168.1.77:4001/feud-questions/search?query=${encodeURIComponent(query)}`
       );
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -1322,7 +1322,7 @@ questionsDisplayFeud.addEventListener("click", function (e) {
     if (e.target.classList.contains("select-question")) {
       const id = e.target.dataset.id;
       showLoading();
-      fetch(`http://localhost:4001/questions?id=${id}`)
+      fetch(`http://192.168.1.77:4001/questions?id=${id}`)
         .then(response => {
           console.log("Fetch response status:", response.status);
           if (!response.ok) {
@@ -1374,7 +1374,7 @@ questionsDisplayFeud.addEventListener("click", function (e) {
                        //Set image preview
           const imagePreview = document.getElementById("imagePreview");
           if (q.image_file) {
-            imagePreview.innerHTML = `<img src="http://localhost:4001/${q.image_file}" style="max-width: 100%; height: auto; border-radius: 5px;">`;
+            imagePreview.innerHTML = `<img src="http://192.168.1.77:4001/${q.image_file}" style="max-width: 100%; height: auto; border-radius: 5px;">`;
           } else {
             imagePreview.innerHTML = "";
           }
@@ -1388,7 +1388,7 @@ questionsDisplayFeud.addEventListener("click", function (e) {
     } else if (e.target.classList.contains("select-song")) {
       const id = e.target.dataset.id;
       showLoading();
-      fetch(`http://localhost:4001/songs?id=${id}`)
+      fetch(`http://192.168.1.77:4001/songs?id=${id}`)
         .then(response => {
           console.log("Fetch response status:", response.status);
           if (!response.ok) {
@@ -1432,7 +1432,7 @@ document.getElementById("deleteQuestionQuestions").addEventListener("click", asy
   if (!confirmation) return;
 
   try {
-    const response = await fetch(`http://localhost:4001/delete-question/${selectedQuestionId}`, {
+    const response = await fetch(`http://192.168.1.77:4001/delete-question/${selectedQuestionId}`, {
       method: "DELETE",
     });
 
@@ -1500,7 +1500,7 @@ editQuestionBtn.addEventListener("click", async function () {
     return;
   }
   
-  console.log(`📤 Fetching: http://localhost:4001/update-question/${currentQuestionId}`);
+  console.log(`📤 Fetching: http://192.168.1.77:4001/update-question/${currentQuestionId}`);
 
 
   if (!currentQuestionId) return;
@@ -1531,7 +1531,7 @@ editQuestionBtn.addEventListener("click", async function () {
   showLoading();
   try {
     const response = await fetch(
-      `http://localhost:4001/update-question/${currentQuestionId}`,
+      `http://192.168.1.77:4001/update-question/${currentQuestionId}`,
       {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -1607,12 +1607,12 @@ editQuestionBtn.addEventListener("click", async function () {
       wrongAnswerMusic: wrongAnswerMusic
     };
   
-    console.log(`📤 PUT to: http://localhost:4001/update-song/${currentSongId}`);
+    console.log(`📤 PUT to: http://192.168.1.77:4001/update-song/${currentSongId}`);
     console.log("📦 Song Data Before Sending:", JSON.stringify(songData, null, 2));
   
     showLoading();
     try {
-      const response = await fetch(`http://localhost:4001/update-song/${currentSongId}`, {
+      const response = await fetch(`http://192.168.1.77:4001/update-song/${currentSongId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json"
@@ -1691,11 +1691,11 @@ editFeudBtn.addEventListener("click", async function () {
   };
   
 
-  console.log(`📤 PUT to: http://localhost:4001/update-feud-question/${feudId}`);
+  console.log(`📤 PUT to: http://192.168.1.77:4001/update-feud-question/${feudId}`);
   console.log("📦 Feud Data Before Sending:", JSON.stringify(feudData, null, 2));
 
   try {
-    const response = await fetch(`http://localhost:4001/update-feud-question/${feudId}`, {
+    const response = await fetch(`http://192.168.1.77:4001/update-feud-question/${feudId}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json"
@@ -1753,7 +1753,7 @@ editFeudBtn.addEventListener("click", async function () {
     showLoading();
     try {
       const response = await fetch(
-        `http://localhost:4001/delete-song/${currentSongId}`,
+        `http://192.168.1.77:4001/delete-song/${currentSongId}`,
         {
           method: "DELETE"
         }
@@ -1784,7 +1784,7 @@ editFeudBtn.addEventListener("click", async function () {
     showLoading();
     try {
       const response = await fetch(
-        `http://localhost:4001/delete-image/${currentImageId}`,
+        `http://192.168.1.77:4001/delete-image/${currentImageId}`,
         {
           method: "DELETE"
         }
@@ -1831,7 +1831,7 @@ document.addEventListener("click", async (e) => {
   if (!confirm("Are you sure you want to delete this image?")) return;
 
   try {
-    const response = await fetch(`http://localhost:4001/delete-image-song/${imageId}`, {
+    const response = await fetch(`http://192.168.1.77:4001/delete-image-song/${imageId}`, {
       method: "DELETE",
     });
 
@@ -2369,7 +2369,7 @@ const categorySlugToId = {
 
   showLoading();
   try {
-    const response = await fetch("http://localhost:4001/upload-image", {
+    const response = await fetch("http://192.168.1.77:4001/upload-image", {
       method: "POST",
       body: formData,
     });
@@ -2456,7 +2456,7 @@ async function fetchImages(category, query = "") {
 
   try {
     // Build the API URL with optional query param
-    const baseUrl = `http://localhost:4001/images`;
+    const baseUrl = `http://192.168.1.77:4001/images`;
     const url = new URL(baseUrl);
     url.searchParams.append("category", category);
     if (query.trim()) {
@@ -2497,8 +2497,8 @@ function renderImages(images) {
     .map(img => {
       // ✅ Build the correct image path (fixes double "uploads/uploads")
       const imagePath = img.image_file.startsWith("uploads/")
-        ? `http://localhost:4001/${img.image_file}`
-        : `http://localhost:4001/uploads/${img.image_file}`;
+        ? `http://192.168.1.77:4001/${img.image_file}`
+        : `http://192.168.1.77:4001/uploads/${img.image_file}`;
 
       return `
         <table class="image-table" data-id="${img.image_id}" border="1" cellpadding="10" cellspacing="0" style="margin-bottom: 1rem; width: 100%; text-align: center;">
@@ -2616,7 +2616,7 @@ document.addEventListener("click", async function (event) {
 
         // Update the image preview if it exists
           if (imagePreview) {
-          const imgUrl = `http://localhost:4001/${selectedImage.image_file.startsWith('uploads/') ? selectedImage.image_file : 'uploads/' + selectedImage.image_file}`;
+          const imgUrl = `http://192.168.1.77:4001/${selectedImage.image_file.startsWith('uploads/') ? selectedImage.image_file : 'uploads/' + selectedImage.image_file}`;
             imagePreview.innerHTML = `
               <img src="${imgUrl}" style="max-width: 100%; height: auto; border-radius: 5px;" />
             `;
@@ -2689,7 +2689,7 @@ document.addEventListener("click", async function (event) {
 
     showLoading();
     try {
-      const response = await fetch(`http://localhost:4001/update-image/${currentImageId}`, {
+      const response = await fetch(`http://192.168.1.77:4001/update-image/${currentImageId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(imageData)
@@ -2808,9 +2808,9 @@ document.getElementById("subImgOnly").addEventListener("click", async function(e
   formData.append("image", imageInput.files[0]);
 
   try {
-      console.log("🚀 Sending image to http://localhost:4001/upload-only-image...");
+      console.log("🚀 Sending image to http://192.168.1.77:4001/upload-only-image...");
       
-      const response = await fetch("http://localhost:4001/upload-only-image", {
+      const response = await fetch("http://192.168.1.77:4001/upload-only-image", {
           method: "POST",  // ✅ Ensure the request is a POST
           body: formData
       });
@@ -2863,7 +2863,7 @@ document.getElementById("subMusic").addEventListener("click", async function(eve
   formData.append("image", selectedImage);
 
   try {
-    const url = "http://localhost:4001/upload-only-image-music";
+    const url = "http://192.168.1.77:4001/upload-only-image-music";
     console.log("🚀 Sending image to:", url);
 
     const response = await fetch(url, {
@@ -2968,7 +2968,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     try {
-      const url = "http://localhost:4001/upload_song";
+      const url = "http://192.168.1.77:4001/upload_song";
       console.log("🚀 Sending request to:", url);
 
       let response = await fetch(url, {
@@ -3035,7 +3035,7 @@ document.addEventListener("DOMContentLoaded", function () {
       console.log("📦 Final Payload:", JSON.stringify(updateData, null, 2));
 
       try {
-        const url = `http://localhost:4001/update-image/${imageId}`;
+        const url = `http://192.168.1.77:4001/update-image/${imageId}`;
         console.log("🚀 Sending request to:", url);
 
         let response = await fetch(url, {
@@ -3097,7 +3097,7 @@ document.getElementById("deleteImage").addEventListener("click", async function 
   }
 
   try {
-      const response = await fetch(`http://localhost:4001/delete-image/${selectedImageId}`, {
+      const response = await fetch(`http://192.168.1.77:4001/delete-image/${selectedImageId}`, {
           method: "DELETE",
       });
 
@@ -3248,7 +3248,7 @@ document.addEventListener("click", (e) => {
 
 async function fetchImagesMusic() {
   try {
-    const response = await fetch("http://localhost:4001/images_music");
+    const response = await fetch("http://192.168.1.77:4001/images_music");
     const data = await response.json();
 
     if (data.success) {
@@ -3274,7 +3274,7 @@ searchImagesMusic.addEventListener("input", async function () {
     showLoading(); // Show loading indicator while fetching the data
     try {
       const response = await fetch(
-        `http://localhost:4001/images_music/search?query=${encodeURIComponent(query)}`
+        `http://192.168.1.77:4001/images_music/search?query=${encodeURIComponent(query)}`
       );
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -3388,12 +3388,12 @@ editImageSong.addEventListener("click", async function () {
     music_tags_right: rightsecTagsMusic
   };
 
-  console.log(`📤 PUT to: http://localhost:4001/update-image-music/${currentImageId}`);
+  console.log(`📤 PUT to: http://192.168.1.77:4001/update-image-music/${currentImageId}`);
   console.log("📦 Image Music Data Before Sending:", JSON.stringify(imageMusicData, null, 2));
 
   showLoading();
   try {
-    const response = await fetch(`http://localhost:4001/update-image-music/${currentImageId}`, {
+    const response = await fetch(`http://192.168.1.77:4001/update-image-music/${currentImageId}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json"
@@ -3686,7 +3686,7 @@ document.getElementById("subMovie").addEventListener("click", async function (ev
   formData.append("rightsecTagsMovie", tagsRight);
 
   try {
-    const response = await fetch("http://localhost:4001/submit-movie", {
+    const response = await fetch("http://192.168.1.77:4001/submit-movie", {
       method: "POST",
       body: formData
     });
@@ -3895,7 +3895,7 @@ document.getElementById('subMovieImg').addEventListener('click', function () {
   formData.append('movieTitleRight', movieTitle);
   formData.append('rightsecTagsMovie', tags);
 
-  fetch('http://localhost:4001/submit-image', {  // Make sure the URL matches your backend route and port
+  fetch('http://192.168.1.77:4001/submit-image', {  // Make sure the URL matches your backend route and port
     method: 'POST',
     body: formData,
   })
@@ -3967,7 +3967,7 @@ async function fetchMoviesSearch(query, side = "left") {
   resultContainer.innerHTML = "<p>Loading...</p>";
 
   try {
-    const response = await fetch(`http://localhost:4001/movies/search?query=${encodeURIComponent(query)}`);
+    const response = await fetch(`http://192.168.1.77:4001/movies/search?query=${encodeURIComponent(query)}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
     const data = await response.json();
@@ -4269,7 +4269,7 @@ document.getElementById("editImageMovieLeft").addEventListener("click", async fu
 
   // Make the API request
   try {
-    const response = await fetch("http://localhost:4001/update-movie-left", {
+    const response = await fetch("http://192.168.1.77:4001/update-movie-left", {
       method: "POST", // Use POST as per your backend API
       body: formData,
     });
@@ -4319,7 +4319,7 @@ document.getElementById("editImageMovieRight").addEventListener("click", async f
   }
 
   try {
-    const response = await fetch("http://localhost:4001/update-movie-right", {
+    const response = await fetch("http://192.168.1.77:4001/update-movie-right", {
       method: "POST", // ✅ CHANGED from PUT to POST
       body: formData,
     });
@@ -4343,7 +4343,7 @@ document.getElementById("editImageMovieRight").addEventListener("click", async f
 
 // Fetch and display the updated list of movies
 function fetchMovies() {
-  fetch("http://localhost:4001/movies")
+  fetch("http://192.168.1.77:4001/movies")
     .then(res => res.json())
     .then(data => {
       console.log("Fetched movies:", data);
@@ -4354,7 +4354,7 @@ function fetchMovies() {
 
 // Fetch and display the updated list of movie images
 function fetchImages() {
-  fetch("http://localhost:4001/movie-images")
+  fetch("http://192.168.1.77:4001/movie-images")
     .then(res => res.json())
     .then(data => {
       console.log("Fetched movie images:", data);
@@ -4413,7 +4413,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const leftImageId = leftImageIdElem ? leftImageIdElem.value : null;
 
       deleteMovie(
-        "http://localhost:4001/delete-movie", // ✅ This is the correct endpoint for image deletion
+        "http://192.168.1.77:4001/delete-movie", // ✅ This is the correct endpoint for image deletion
         leftImageId,
         "Are you sure you want to delete this movie image?",
         "🖼️ Movie image deleted successfully.",
@@ -4426,7 +4426,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const rightMovieId = rightMovieIdElem ? rightMovieIdElem.value : null;
 
       deleteMovie(
-        "http://localhost:4001/delete-movie-image", // ✅ This is the correct endpoint for movie deletion
+        "http://192.168.1.77:4001/delete-movie-image", // ✅ This is the correct endpoint for movie deletion
         rightMovieId,
         "Are you sure you want to delete this movie (and its image)?",
         "🎬 Movie deleted successfully!",
@@ -4486,7 +4486,7 @@ document.getElementById('subWagerImg').addEventListener('click', async () => {
   formData.append('imageFileWagerRight', imageFileRight);
 
   try {
-    const response = await fetch('http://localhost:4001/submit-wager', {
+    const response = await fetch('http://192.168.1.77:4001/submit-wager', {
       method: 'POST',
       body: formData
     });
@@ -4544,7 +4544,7 @@ document.getElementById('subWager').addEventListener('click', async () => {
   formData.append('rightsecTagsWager', wagerTags);
 
   try {
-    const response = await fetch('http://localhost:4001/submit-wager', {
+    const response = await fetch('http://192.168.1.77:4001/submit-wager', {
       method: 'POST',
       body: formData
     });
@@ -4605,7 +4605,7 @@ async function fetchWagerSubmissionsSearch(query, side) {
   showLoading();
 
   try {
-    const res = await fetch(`http://localhost:4001/wager-submissions/search?query=${encodeURIComponent(query)}`);
+    const res = await fetch(`http://192.168.1.77:4001/wager-submissions/search?query=${encodeURIComponent(query)}`);
     const data = await res.json();
 
     if (data.success && Array.isArray(data.submissions)) {
@@ -4808,7 +4808,7 @@ document.getElementById("clearImageFormWagerRight").addEventListener("click", ()
     }
 
     try {
-      const response = await fetch(`http://localhost:4001/update-wager/${submissionId}`, {
+      const response = await fetch(`http://192.168.1.77:4001/update-wager/${submissionId}`, {
         method: "PATCH",
         body: formData,
         mode: "cors"
@@ -4904,7 +4904,7 @@ async function deleteWagerSubmission(submissionId) {
   if (!confirmDelete) return;
 
   try {
-    const response = await fetch(`http://localhost:4001/delete-wager/${submissionId}`, {
+    const response = await fetch(`http://192.168.1.77:4001/delete-wager/${submissionId}`, {
       method: "DELETE",
       mode: "cors"
     });

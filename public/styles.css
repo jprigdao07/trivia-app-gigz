@@ -1392,7 +1392,51 @@ Quizzes Tab Styles */
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
+      overflow: auto;
     }
+
+    #quizPreviewRoot {
+  width: 100%;
+  height: 100%;
+}
+
+/* .tv-mode {
+  font-size: 1.25em;
+}
+
+.tv-mode h1 {
+  font-size: clamp(2.5rem, 5vw, 5rem);
+}
+
+.tv-mode h2 {
+  font-size: clamp(1.8rem, 3.5vw, 3.5rem);
+}
+
+.tv-mode p,
+.tv-mode li {
+  font-size: clamp(1.3rem, 2.2vw, 2.6rem);
+  line-height: 1.5;
+} */
+
+.tv-mode #leftBox,
+.tv-mode #bottomBox {
+  display: none !important;
+}
+
+.tv-mode #rightBox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+}
+
+.tv-mode .preview-box,
+.tv-mode #quizPreviewRoot {
+  width: 100%;
+  height: 100%;
+}
+
     .bottom-box {
       height: 700px;
       margin-top: 20px;
@@ -1630,3 +1674,4 @@ Quizzes Tab Styles */
   color: #fff;
   border: none;
 }
+

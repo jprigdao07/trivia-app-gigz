@@ -1,0 +1,47 @@
+<script>
+(function () {
+
+  // Detect TV-mode only if query param is present AND running on SBC
+  function isTVDevice() {
+    const params = new URLSearchParams(window.location.search);
+    const tvParam = params.get("tv") === "true";
+
+    // Optional: detect SBC by checking OS / user agent / hostname
+    // Example using hostname (change 'orangepi' to your SBC hostname)
+    const hostname = window.location.hostname;
+    const isSBC = hostname.includes("192.168.1.77"); // IP of SBC or host check
+
+    return tvParam && isSBC;
+  }
+
+  if (isTVDevice()) {
+    document.documentElement.classList.add("tv-mode");
+  }
+
+})();
+</script>
+
+<script>
+function waitForQuizReady(callback, timeout = 5000) {
+  const start = Date.now();
+  const interval = setInterval(() => {
+    const quiz = document.getElementById("quizPreviewRoot");
+    if (quiz && quiz.children.length > 0) {
+      clearInterval(interval);
+      callback();
+    } else if (Date.now() - start > timeout) {
+      clearInterval(interval);
+      console.warn("Quiz never rendered in time.");
+    }
+  }, 1000);
+}
+
+// auto-start TV mode when quiz is ready
+window.addEventListener("load", () => {
+  waitForQuizReady(() => {
+    if (typeof startTVMode === "function" && document.documentElement.classList.contains("tv-mode")) {
+      startTVMode();
+    }
+  });
+});
+</script>

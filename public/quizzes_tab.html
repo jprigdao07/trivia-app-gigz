@@ -1,10 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+<script>
+(function () {
+  const isTV = window.location.search.includes("tv=true");
+  if (isTV) {
+    document.documentElement.classList.add("tv-mode");
+  }
+})();
+</script>
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="build/static/css/main.05e87ef5.css" />
+  <link rel="stylesheet" href="build/static/css/main.fe2d88a9.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <title>Quizzes</title>
@@ -15,6 +25,15 @@
       margin: 0;
       padding: 16px;
     }
+/* 
+    .tv-mode-fullscreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 9999;
+} */
   
   </style>
 </head>
@@ -80,13 +99,14 @@
   </section>
 
   <section class="b-sec">
-    <div class="box right-box">
+    <div id="rightBox" class="box right-box">
         <div class="preview-box">
           <p id="quizDetailsRoot"></p>   
-                  <div id="quizPreviewRoot" class="right-panel"></div>
+                  <div id="quizPreviewRoot" class="right-panel tv-mode"></div>
         </div>
     </div>
   </div>
+  <button onclick="startTVMode()" class="button">📺 TV Mode</button>
 
 <!-- Add Modal -->
 <div id="addModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5); z-index:1000;">
@@ -195,7 +215,7 @@ let quizActivated = false;
 // =============================================
 async function fetchScheduledStart(gameId) {
   try {
-    const res = await fetch(`http://localhost:8080/api/latest-countdown?gameId=${gameId}`);
+    const res = await fetch(`http://192.168.1.77:8080/api/latest-countdown?gameId=${gameId}`);
     const data = await res.json();
     if (!data.scheduledStart) return null;
     return new Date(data.scheduledStart).getTime();
@@ -216,7 +236,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       window.currentGameId = storedGameId;
       console.log("🎲 Using stored Game ID:", window.currentGameId);
     } else {
-      const res = await fetch("http://localhost:8080/api/get-latest-game-id");
+      const res = await fetch("http://192.168.1.77:8080/api/get-latest-game-id");
       const data = await res.json();
       if (!data.id) {
         console.warn("⚠️ No active game ID found on server.");
@@ -230,7 +250,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // =============================================
     // 🔌 CONNECT TO SOCKET.IO
     // =============================================
-    socket = io("http://localhost:8080", {
+    socket = io("http://192.168.1.77:8080", {
       auth: { role: "quiz", gameId: window.currentGameId },
     });
 
@@ -377,7 +397,7 @@ socket.on("controller:selected_quiz", async ({ gameId }) => {
 // ✅ SET ACTIVE GAME TO BACKEND (REQUIRED)
 // =============================================
 try {
-  await fetch("http://localhost:8080/api/set-active-game", {
+  await fetch("http://192.168.1.77:8080/api/set-active-game", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -762,7 +782,7 @@ function handleQuizClick(quiz) {
 async function onQuizClick(quizId) {
   try {
     // 1️⃣ Fetch main quiz details
-    let res = await fetch(`http://localhost:4001/api/quiz/${quizId}`);
+    let res = await fetch(`http://192.168.1.77:4001/api/quiz/${quizId}`);
     let quizDetails = await res.json();
 
     if (!quizDetails.game) throw new Error("Quiz details missing 'game' object");
@@ -770,7 +790,7 @@ async function onQuizClick(quizId) {
 
     // 2️⃣ Activate if inactive
     if (game.status !== "active") {
-      const activateRes = await fetch(`http://localhost:4001/api/quiz/${quizId}/activate`, { method: "PATCH" });
+      const activateRes = await fetch(`http://192.168.1.77:4001/api/quiz/${quizId}/activate`, { method: "PATCH" });
       if (!activateRes.ok) {
         alert("Failed to activate quiz.");
         return;
@@ -783,7 +803,7 @@ async function onQuizClick(quizId) {
     // 3️⃣ Ensure scheduled_start_at exists
     if (!game.scheduled_start_at) {
       const scheduledStart = new Date(Date.now() + 5 * 60 * 1000).toISOString();
-      await fetch(`http://localhost:4001/api/quiz/${quizId}/set-scheduled-start`, {
+      await fetch(`http://192.168.1.77:4001/api/quiz/${quizId}/set-scheduled-start`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ scheduledStart })
@@ -801,7 +821,7 @@ async function onQuizClick(quizId) {
     }
 
     // 5️⃣ Optional: notify bridge
-    fetch("http://localhost:8080/api/start-countdown", {
+    fetch("http://192.168.1.77:8080/api/start-countdown", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ gameId: game.id, scheduledStart: game.scheduled_start_at })
@@ -834,7 +854,7 @@ async function populateLeftPanel() {
   container.innerHTML = '<div style="padding:8px;color:#888">Loading quizzes...</div>';
 
   try {
-    const res = await fetch("http://localhost:4001/api/quizzes");
+    const res = await fetch("http://192.168.1.77:4001/api/quizzes");
     if (!res.ok) throw new Error(`Failed to fetch quizzes: ${res.statusText}`);
     let quizzes = await res.json();
 
@@ -924,7 +944,7 @@ async function populateLeftPanel() {
       if (quiz.status === "active") {
         (async () => {
           try {
-            const res = await fetch(`http://localhost:4001/api/teams?quiz_id=${quiz.game_id}`);
+            const res = await fetch(`http://192.168.1.77:4001/api/teams?quiz_id=${quiz.game_id}`);
             if (!res.ok) throw new Error("Failed to fetch teams");
 
             const teams = await res.json();
@@ -986,7 +1006,7 @@ saveBtn.onclick = async () => {
   const selectedDay = daySelect.value;
 
   try {
-    const res = await fetch("http://localhost:4001/api/assign-quiz", {
+    const res = await fetch("http://192.168.1.77:4001/api/assign-quiz", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ quizId, day: selectedDay }), // just day
@@ -1221,7 +1241,7 @@ async function generateNewQuiz() {
 
 
     // 3️⃣ Create new game with details
-    const gameIdRes = await fetch("http://localhost:4001/api/game-id", {
+    const gameIdRes = await fetch("http://192.168.1.77:4001/api/game-id", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1252,7 +1272,7 @@ async function generateNewQuiz() {
     // 4️⃣ Fetch general rounds
     for (let i = 1; i <= 15; i++) {
       if ([6, 12, 15].includes(i)) continue;
-      const res = await fetch(`http://localhost:4001/api/rounds/${i}`);
+      const res = await fetch(`http://192.168.1.77:4001/api/rounds/${i}`);
       const data = await res.json();
       if (!data?.questions?.length) continue;
 
@@ -1267,7 +1287,7 @@ async function generateNewQuiz() {
 
     // 5️⃣ Fetch Music rounds (6, 12)
     for (const musicRound of [6, 12]) {
-      const musicRes = await fetch(`http://localhost:4001/api/music-round?round_type=${musicRound}`);
+      const musicRes = await fetch(`http://192.168.1.77:4001/api/music-round?round_type=${musicRound}`);
       const musicData = await musicRes.json();
       if (musicData?.questions?.length) {
         allRounds.push({
@@ -1284,7 +1304,7 @@ async function generateNewQuiz() {
     }
 
     // 6️⃣ Feud round
-    const feudRes = await fetch("http://localhost:4001/api/round/feud");
+    const feudRes = await fetch("http://192.168.1.77:4001/api/round/feud");
     const feudData = await feudRes.json();
     if (feudData && feudData.question_text) {
       allRounds.push({
@@ -1302,7 +1322,7 @@ async function generateNewQuiz() {
     }
 
     // 7️⃣ Movie round
-    const movieRes = await fetch("http://localhost:4001/api/movie-round");
+    const movieRes = await fetch("http://192.168.1.77:4001/api/movie-round");
     const movieData = await movieRes.json();
     if (movieData?.questions?.length) {
       allRounds.push({
@@ -1318,7 +1338,7 @@ async function generateNewQuiz() {
     }
 
     // 8️⃣ Save quiz rounds + game details
-    const saveRes = await fetch("http://localhost:4001/api/quizzes", {
+    const saveRes = await fetch("http://192.168.1.77:4001/api/quizzes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1336,7 +1356,7 @@ async function generateNewQuiz() {
     // ✅ Set this quiz as the active game
 const scheduledStartUTC = new Date(dayPH).toISOString(); // UTC ISO string
 
-await fetch("http://localhost:8080/api/set-active-game", {
+await fetch("http://192.168.1.77:8080/api/set-active-game", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ gameId, scheduledStart: scheduledStartUTC })
@@ -1351,7 +1371,7 @@ console.log("✅ Active Game ID set:", gameId);
 
     // 9️⃣ Trigger countdown for connected clients
     try {
-    await fetch("http://localhost:8080/api/start-countdown", {
+    await fetch("http://192.168.1.77:8080/api/start-countdown", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ gameId, scheduledStart: dayPH })
@@ -1458,8 +1478,8 @@ function saveQuestion() {
 
     const isQuizQuestion = question.source === "quiz";
     const url = isQuizQuestion
-      ? `http://localhost:4001/update-quiz-question/${question.id}`
-      : `http://localhost:4001/update-question/${question.id}`;
+      ? `http://192.168.1.77:4001/update-quiz-question/${question.id}`
+      : `http://192.168.1.77:4001/update-question/${question.id}`;
 
     fetch(url, {
       method: 'PUT',
@@ -1518,7 +1538,7 @@ function saveQuestion() {
     multiple_choice: 0
   };
 
-  fetch(`http://localhost:4001/api/quiz-questions`, {
+  fetch(`http://192.168.1.77:4001/api/quiz-questions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
@@ -1564,7 +1584,7 @@ function deleteQuestion(roundIndex, questionIndex) {
 
   if (!confirm("Are you sure you want to delete this question?")) return;
 
-  fetch(`http://localhost:4001/api/questions/${question.id}`, { method: 'DELETE' })
+  fetch(`http://192.168.1.77:4001/api/questions/${question.id}`, { method: 'DELETE' })
     .then(async res => {
       if (!res.ok) throw new Error(await res.text());
       window._allRounds[roundIndex].questions.splice(questionIndex, 1);
@@ -1646,7 +1666,7 @@ async function searchQuestions() {
 
   try {
     const res = await fetch(
-      `http://localhost:4001/api/quiz-questions?search=${encodeURIComponent(query)}`
+      `http://192.168.1.77:4001/api/quiz-questions?search=${encodeURIComponent(query)}`
     );
     const data = await res.json();
 
@@ -1732,7 +1752,7 @@ async function loadQuizData() {
   // teamList.innerHTML = locList.innerHTML = scoreContainer.innerHTML = "<em>Loading...</em>";
 
   try {
-    const res = await fetch("http://localhost:8080/api/quiz-data");
+    const res = await fetch("http://192.168.1.77:8080/api/quiz-data");
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     const { teams, locations, scores } = await res.json();
@@ -1743,9 +1763,37 @@ async function loadQuizData() {
   }
 }
 </script>
+
+<script>
+  function startTVMode() {
+    document.body.classList.add("tv-mode");
+    goFullscreen();
+  }
+
+document.addEventListener("fullscreenchange", () => {
+  const root = document.getElementById("quizPreviewRoot");
+  if (!document.fullscreenElement) {
+    root?.classList.remove("tv-mode");
+  }
+});
+
+function goFullscreen() {
+  const elem = document.getElementById("rightBox");
+
+  if (elem.requestFullscreen) {
+    elem.requestFullscreen();
+  }
+
+  document
+    .getElementById("quizPreviewRoot")
+    ?.classList.add("tv-mode");
+}
+</script>
+
+
  
-<script src="http://localhost:8080/socket.io/socket.io.js"></script>
- <script src="build/static/js/main.3f56bdbc.js"></script>
+<script src="http://192.168.1.77:8080/socket.io/socket.io.js"></script>
+ <script src="build/static/js/main.23ba3b5d.js"></script>
  
 </body>
 </html>

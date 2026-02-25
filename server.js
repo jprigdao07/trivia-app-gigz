@@ -12,10 +12,28 @@ const http = require('http');
 const { Server } = require('socket.io');
 
 const app = express();
+app.use(express.static(path.join(__dirname, 'public')));
+
 const PORT = process.env.PORT || 4001 ;
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+// const io = new Server(server, { cors: { origin: "*" } });
 const { v4: uuidv4 } = require('uuid');
+
+
+const ALLOWED_ORIGINS = [
+  'http://localhost:8080',       // controller on PC
+  'http://127.0.0.1:8080',       // controller on PC
+  'http://192.168.1.77:8080', // controller from phone or SBC
+  'http://192.168.1.77:4001'
+];
+
+const io = new Server(server, {
+  cors: {
+    origin: ALLOWED_ORIGINS,
+    methods: ['GET', 'POST']
+  }
+});
+
 
 app.set('io', io);
 
@@ -36,12 +54,16 @@ liveReloadServer.server.once("connection", () => {
   }, 100);
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
+// app.listen(PORT, '0.0.0.0', () => {
+//   console.log(`🚀 Server running on http://localhost:${PORT}`);
+// });
 
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+// server.listen(PORT, () => {
+//   console.log(`🚀 Server running on http://localhost:${PORT}`);
+// });
+
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
 });
 
 // app.use((req, res, next) => {
@@ -92,10 +114,29 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // ✅ Allow controller app (port 8080) to access
 app.use(cors({
-  origin: "http://localhost:8080",
-  methods: ["GET", "POST", "PATCH", "DELETE"],
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      "http://localhost:8080",
+      "http://localhost:4001",
+      "http://127.0.0.1:8080",
+      "http://127.0.0.1:4001",
+      "http://192.168.1.77:8080",
+      "http://192.168.1.77:4001"
+    ];
+
+    // allow non-browser requests (Postman, curl)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
   credentials: true
 }));
+
 
 // MySQL Connection Pool
 const db = mysql.createPool({
