@@ -692,12 +692,21 @@ async function handleQuizActivation(quizId) {
     });
 
     // Join socket room automatically if socket exists
-    if (socket && socket.connected) {
-      socket.emit("joinRoom", { gameId: window.currentGameId });
-      socket.emit("controller:selected_quiz", { gameId: window.currentGameId });
-      socket.emit("latest-game-id-updated", { id: window.currentGameId });
-      console.log("📡 Notified quizzes app of selected quiz:", window.currentGameId);
-    }
+// Join socket room automatically if socket exists
+  if (socket && socket.connected) {
+    // Always join the room
+    socket.emit("joinRoom", { gameId: window.currentGameId });
+
+    // Emit controller:selected_quiz regardless — needed for both laptop and SBC
+    socket.emit("controller:selected_quiz", { gameId: window.currentGameId });
+
+    // Update lastActivatedGameId after sending event
+    lastActivatedGameId = window.currentGameId;
+
+    // Optional: notify other listeners
+    socket.emit("latest-game-id-updated", { id: window.currentGameId });
+    console.log("📡 Notified quizzes app of selected quiz:", window.currentGameId);
+  }
 
     return window.currentGameId;
   } catch (err) {

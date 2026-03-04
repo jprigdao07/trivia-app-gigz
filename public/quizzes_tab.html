@@ -3,9 +3,56 @@
 <head>
 
 <script>
+function ensureFullscreen() {
+  const elem = document.documentElement;
+
+  if (!document.fullscreenElement) {
+    elem.requestFullscreen().catch(() => {});
+  }
+}
+
+document.addEventListener("fullscreenchange", () => {
+  if (!document.fullscreenElement) {
+    console.log("⚠️ Fullscreen exited, restoring...");
+    setTimeout(ensureFullscreen, 500);
+  }
+});
+
+// Also check every few seconds
+setInterval(() => {
+  if (!document.fullscreenElement) {
+    ensureFullscreen();
+  }
+}, 3000);
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("enterFullScreen");
+
+  // User clicks once → enter fullscreen
+  btn.addEventListener("click", () => {
+    const el = document.getElementById("rightBox") || document.body;
+    el.requestFullscreen().catch(err => console.error("Fullscreen failed:", err));
+    btn.style.display = "none";
+    window.SBCFullscreenActive = true;
+    localStorage.setItem("SBCFullscreenActive", "1");
+  });
+
+  // Auto-hide button if fullscreen was already activated
+  if (localStorage.getItem("SBCFullscreenActive")) {
+    btn.style.display = "none";
+    window.SBCFullscreenActive = true;
+  }
+});
+</script>
+
+<script>
 (function () {
-  const isTV = window.location.search.includes("tv=true");
-  if (isTV) {
+  const params = new URLSearchParams(window.location.search);
+  const isSBC = params.get("device") === "sbc";
+
+  if (isSBC) {
     document.documentElement.classList.add("tv-mode");
   }
 })();
@@ -99,14 +146,16 @@
   </section>
 
   <section class="b-sec">
+    <div id="app-root">
     <div id="rightBox" class="box right-box">
         <div class="preview-box">
           <p id="quizDetailsRoot"></p>   
                   <div id="quizPreviewRoot" class="right-panel tv-mode"></div>
         </div>
     </div>
+    </div>
   </div>
-  <button onclick="startTVMode()" class="button">📺 TV Mode</button>
+  <button id="enterFullScreen" class="button">📺 TV Mode</button>
 
 <!-- Add Modal -->
 <div id="addModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5); z-index:1000;">
@@ -266,19 +315,19 @@ socket.on("connect", () => {
   socket.emit("join_game_room", "global");
 });
 
-    // =============================================
+// =============================================
 // ⏱ FIXED: LISTEN TO 8080 SERVER BROADCAST
 // =============================================
 socket.on("start-countdown", ({ gameId, scheduledStart }) => {
   console.log("🔥 TV RECEIVED start-countdown:", gameId, scheduledStart);
 
-  // Redirect only if we’re NOT skipping
-if (!window.location.href.includes("countdown")
-    && window.reactNavigateToCountdown !== "READY") {
+  // Only load countdown in-place
+  if (typeof loadCountdownById === "function") {
+    loadCountdownById(gameId, scheduledStart);
 
-  window.location.href = `/quizzes_tab.html#/countdown?gameId=${gameId}`;
-}
-
+    // Re-apply fullscreen safely
+    if (typeof startTVMode === "function") startTVMode();
+  }
 });
 
     // =============================================
@@ -469,13 +518,21 @@ try {
 socket.on("controller:start_countdown", ({ gameId, scheduledStart }) => {
   console.log("🎯 Countdown event received:", gameId, scheduledStart);
 
-  // If Start Quiz is being triggered, DO NOT redirect to countdown
-  if (window.skipCountdown === true) {
-    console.log("⏭ Skipping countdown redirection (Start Quiz triggered)");
-    return;
+  // For TV/SBC: load in-place
+  const isSBC = window.innerWidth >= 1200; // your detection logic
+  if (isSBC && typeof loadQuizById === "function") {
+    console.log("📺 SBC/TV mode: load countdown in-place");
+    loadQuizById(gameId);
+
+    // Reapply fullscreen after DOM updates
+    setTimeout(() => {
+      if (typeof startTVMode === "function") startTVMode();
+    }, 100);
+
+    return; // stop any navigation
   }
 
-  // Normal behavior: redirect to countdown
+  // Otherwise, fallback to navigation
   if (typeof window.reactNavigateToCountdown === "function") {
     console.log("➡️ Navigating React TV to CountdownPage...");
     window.reactNavigateToCountdown(gameId);
@@ -485,7 +542,6 @@ socket.on("controller:start_countdown", ({ gameId, scheduledStart }) => {
     }
   }
 });
-
 
   } catch (err) {
     console.error("❌ Initialization failed:", err);
@@ -781,26 +837,23 @@ function handleQuizClick(quiz) {
 /********* Load Quiz Details on Click *********/
 async function onQuizClick(quizId) {
   try {
-    // 1️⃣ Fetch main quiz details
+    if (!quizId) return alert("Invalid quiz selected.");
+
+    // 1️⃣ Fetch quiz details
     let res = await fetch(`http://192.168.1.77:4001/api/quiz/${quizId}`);
     let quizDetails = await res.json();
-
-    if (!quizDetails.game) throw new Error("Quiz details missing 'game' object");
+    if (!quizDetails.game) throw new Error("Quiz missing 'game' object");
     let { game } = quizDetails;
 
     // 2️⃣ Activate if inactive
     if (game.status !== "active") {
       const activateRes = await fetch(`http://192.168.1.77:4001/api/quiz/${quizId}/activate`, { method: "PATCH" });
-      if (!activateRes.ok) {
-        alert("Failed to activate quiz.");
-        return;
-      }
+      if (!activateRes.ok) throw new Error("Failed to activate quiz");
       const activateData = await activateRes.json();
       game = activateData.game;
-      alert("Quiz activated! You can now play it.");
     }
 
-    // 3️⃣ Ensure scheduled_start_at exists
+    // 3️⃣ Ensure scheduled_start_at
     if (!game.scheduled_start_at) {
       const scheduledStart = new Date(Date.now() + 5 * 60 * 1000).toISOString();
       await fetch(`http://192.168.1.77:4001/api/quiz/${quizId}/set-scheduled-start`, {
@@ -809,42 +862,53 @@ async function onQuizClick(quizId) {
         body: JSON.stringify({ scheduledStart })
       });
       game.scheduled_start_at = scheduledStart;
-      console.log("⏱ Scheduled start set:", scheduledStart);
     }
 
-    // 4️⃣ Trigger countdown via socket.io
-    if (window.socket) {
+    // 4️⃣ Update globals
+    window.currentGameId = game.id;
+    localStorage.setItem("currentGameId", game.id);
+    window.activeScheduledStart = game.scheduled_start_at;
+
+    // 5️⃣ Trigger countdown via socket
+    if (window.socket && window.socket.connected) {
       window.socket.emit("controller:start_countdown", {
         gameId: game.id,
         scheduledStart: game.scheduled_start_at
       });
     }
 
-    // 5️⃣ Optional: notify bridge
+    // 6️⃣ Trigger backend bridge (optional)
     fetch("http://192.168.1.77:8080/api/start-countdown", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ gameId: game.id, scheduledStart: game.scheduled_start_at })
     }).catch(err => console.error("⚠️ Failed to trigger countdown:", err));
 
-    // 6️⃣ Store globally
-    window.currentGameId = game.id;
-    const hiddenField = document.getElementById("currentGameId");
-    if (hiddenField) hiddenField.value = game.id;
+    // 7️⃣ Load in-place for SBC/TV (fullscreen-safe)
+    const isSBC = window.innerWidth >= 1200; // adjust threshold if needed
+    if (isSBC && typeof loadQuizById === "function") {
+      console.log("📺 SBC/TV mode: loading quiz in-place, keeping fullscreen");
+      loadQuizById(game.id);
 
-    // 7️⃣ Navigate to countdown via hash route
-    if (typeof window.reactNavigateToCountdown === "function") {
-      window.reactNavigateToCountdown(game.id);
+      // Reapply fullscreen after DOM updates
+      setTimeout(() => {
+        if (typeof startTVMode === "function") startTVMode();
+      }, 100);
+
     } else {
-      window.location.href = `/quizzes_tab.html#/countdown?gameId=${game.id}`;
+      console.log("💻 Desktop/laptop: navigating normally");
+      if (typeof window.reactNavigateToCountdown === "function") {
+        window.reactNavigateToCountdown(game.id);
+      } else {
+        window.location.href = `/quizzes_tab.html#/countdown?gameId=${game.id}&scheduledStart=${encodeURIComponent(game.scheduled_start_at)}`;
+      }
     }
 
   } catch (err) {
-    console.error("❌ Failed to load quiz details:", err);
+    console.error("❌ Failed to load quiz:", err);
     alert("Failed to load quiz. Check console.");
   }
 }
-
 
 /********* Left Panel Quiz List *********/
 async function populateLeftPanel() {
@@ -1381,15 +1445,23 @@ console.log("✅ Active Game ID set:", gameId);
       console.error("⚠️ Failed to trigger countdown:", err);
     }
 
-    // Navigate to CountdownPage
-    if (typeof window.reactNavigateToCountdown === "function") {
-      console.log("➡️ Navigating React TV to countdown page...");
-      window.reactNavigateToCountdown(gameId);
-    } else {
-      console.log("➡️ Navigating to countdown page via URL...");
-      window.location.href =
-  `/quizzes_tab.html#/countdown?gameId=${gameId}&scheduledStart=${encodeURIComponent(dayPH)}`;
-    }
+    // ✅ SBC/TV detection
+      const isSBC = window.innerWidth >= 1200;
+      if (isSBC) {
+        console.log("📺 SBC/TV mode: loading quiz in-place, keeping fullscreen");
+        if (typeof window.loadQuizById === "function") {
+          window.loadQuizById(game.id);
+        }
+        setTimeout(() => {
+          if (typeof startTVMode === "function") startTVMode();
+        }, 100);
+      } else {
+        console.log("💻 Desktop/laptop: navigating normally");
+        if (typeof window.reactNavigateToCountdown === "function") {
+          window.reactNavigateToCountdown(game.id);
+        }
+        // ❌ DO NOT use location.href
+      }
 
     // 9️⃣ Save globally and render
     window._allRounds = allRounds;
@@ -1403,7 +1475,7 @@ console.log("✅ Active Game ID set:", gameId);
       .toLocaleString("en-PH", { hour12: false });
 
     alert(`Quiz generated as INACTIVE. Activate it before it can be played.
-Scheduled Start: ${phTimeString}`);
+    Scheduled Start: ${phTimeString}`);
 
   } catch (err) {
     console.error("❌ Failed to generate quiz:", err);
@@ -1765,35 +1837,102 @@ async function loadQuizData() {
 </script>
 
 <script>
-  function startTVMode() {
-    document.body.classList.add("tv-mode");
-    goFullscreen();
+function isSBC() {
+  return new URLSearchParams(window.location.search).get("device") === "sbc";
+}
+
+function startTVMode() {
+  if (!isSBC()) return;
+  const rightBox = document.getElementById("rightBox");
+  if (!rightBox) return;
+
+  document.body.classList.add("tv-mode");
+  rightBox.classList.add("tv-mode");
+
+  // Only request fullscreen if not already fullscreen
+  if (!document.fullscreenElement) {
+    rightBox.requestFullscreen().catch(err => {
+      console.warn("Fullscreen request failed:", err);
+    });
+  }
+}
+
+// Force fullscreen safely, only on user gesture or after render
+function forceFullscreenAfterRender() {
+  if (!isSBC()) return;
+  const rightBox = document.getElementById("rightBox");
+  if (!rightBox) return;
+
+  requestAnimationFrame(() => {
+    if (!document.fullscreenElement) {
+      rightBox.requestFullscreen().catch(() => {});
+    }
+  });
+}
+
+// Watch for DOM changes in the quiz container, but don't replace the container itself
+function observeQuizContent() {
+  const quizRoot = document.getElementById("quizPreviewRoot");
+  if (!quizRoot) return;
+
+  const observer = new MutationObserver(() => {
+    forceFullscreenAfterRender();
+  });
+
+  observer.observe(quizRoot, { childList: true, subtree: true });
+}
+
+// Handle new quiz selection from controller
+function onNewQuizSelected() {
+  if (!isSBC()) return;
+
+  const quizRoot = document.getElementById("quizPreviewRoot");
+  if (!quizRoot) return;
+
+  const checkReady = setInterval(() => {
+    if (quizRoot.children.length > 0) {
+      clearInterval(checkReady);
+      // Ensure TV mode + fullscreen
+      startTVMode();
+      forceFullscreenAfterRender();
+    }
+  }, 100);
+}
+
+window.addEventListener("load", () => {
+  if (isSBC()) {
+    startTVMode();
+    observeQuizContent();
   }
 
-document.addEventListener("fullscreenchange", () => {
-  const root = document.getElementById("quizPreviewRoot");
-  if (!document.fullscreenElement) {
-    root?.classList.remove("tv-mode");
+  if (window.socket) {
+    window.socket.on("controller:selected_quiz", () => {
+      onNewQuizSelected();
+    });
   }
 });
-
-function goFullscreen() {
-  const elem = document.getElementById("rightBox");
-
-  if (elem.requestFullscreen) {
-    elem.requestFullscreen();
-  }
-
-  document
-    .getElementById("quizPreviewRoot")
-    ?.classList.add("tv-mode");
-}
 </script>
 
+<script>
+  // Fullscreen enforcement
+  function ensureFullscreen() {
+    const box = document.getElementById("rightBox");
+    if (box && !document.fullscreenElement) {
+      box.requestFullscreen().catch(() => {});
+    }
+  }
 
- 
+  // Observe dynamic content
+  const observer = new MutationObserver(ensureFullscreen);
+  observer.observe(document.getElementById("quizPreviewRoot"), { childList: true, subtree: true });
+
+  // Also call on load and after route changes
+  window.addEventListener("load", ensureFullscreen);
+  window.addEventListener("quiz:navigate", ensureFullscreen);
+</script>
+
 <script src="http://192.168.1.77:8080/socket.io/socket.io.js"></script>
- <script src="build/static/js/main.23ba3b5d.js"></script>
+ <script src="build/static/js/main.9352a183.js"></script>
  
 </body>
 </html>

@@ -20,28 +20,3 @@
 
 })();
 </script>
-
-<script>
-function waitForQuizReady(callback, timeout = 5000) {
-  const start = Date.now();
-  const interval = setInterval(() => {
-    const quiz = document.getElementById("quizPreviewRoot");
-    if (quiz && quiz.children.length > 0) {
-      clearInterval(interval);
-      callback();
-    } else if (Date.now() - start > timeout) {
-      clearInterval(interval);
-      console.warn("Quiz never rendered in time.");
-    }
-  }, 1000);
-}
-
-// auto-start TV mode when quiz is ready
-window.addEventListener("load", () => {
-  waitForQuizReady(() => {
-    if (typeof startTVMode === "function" && document.documentElement.classList.contains("tv-mode")) {
-      startTVMode();
-    }
-  });
-});
-</script>
