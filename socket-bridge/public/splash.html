@@ -5,6 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GIGZ Controller</title>
   <link rel="stylesheet" href="style.css" />
+
+ <script>
+    localStorage.removeItem("loginStarted");
+    localStorage.setItem("fromSplash", "true");
+
+    setTimeout(() => {
+      window.location.href = "login.html";
+    }, 3000);
+  </script>
+
   <style>
     body {
       background: url('trivia-app.PNG') no-repeat center center fixed;
@@ -50,11 +60,5 @@
     <img src="5star_host.png" alt="">
   </div>
 
-  <script>
-    // Redirect after 2.5 seconds
-    setTimeout(() => {
-      window.location.href = "login.html"; // go to Screen 2
-    }, 3000);
-  </script>
 </body>
 </html>

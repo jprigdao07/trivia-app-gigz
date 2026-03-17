@@ -4,7 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GIGZ - Login</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="styles.css" />
+
+<script>
+if (localStorage.getItem("fromSplash") !== "true") {
+  window.location.href = "splash.html";
+}
+</script>
+
   <style>
       body {
       background: url('trivia-app.PNG') no-repeat center center fixed;
@@ -89,19 +96,17 @@
   </div>
 
   <script>
-    document.getElementById("loginBtn").addEventListener("click", () => {
-      const user = document.getElementById("username").value.trim();
-      if (user === "") {
-        alert("Please enter your email or phone number");
-        return;
-      }
+      document.getElementById("loginBtn").addEventListener("click", () => {
+        const user = document.getElementById("username").value.trim();
+        if (!user) {
+          alert("Please enter your email or phone");
+          return;
+        }
 
-      // Save user info temporarily (you can later connect this to backend)
-      localStorage.setItem("pendingUser", user);
-
-      // Redirect to OTP verification (Screen 3)
-      window.location.href = "verify.html";
-    });
+        localStorage.setItem("pendingUser", user);
+        localStorage.setItem("loginStarted", "true"); // mark login success
+        window.location.href = "verify.html"; // move to next page
+      });
   </script>
 </body>
 </html>

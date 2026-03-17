@@ -30,7 +30,7 @@ const ALLOWED_ORIGINS = [
 const io = new Server(server, {
   cors: {
     origin: ALLOWED_ORIGINS,
-    methods: ['GET', 'POST']
+    methods: ['GET', 'POST', 'PUT']
   }
 });
 
@@ -133,7 +133,7 @@ app.use(cors({
       callback(new Error("Not allowed by CORS"));
     }
   },
-  methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   credentials: true
 }));
 

@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gigz - Verify</title>
   <link rel="stylesheet" href="style.css" />
+
+<script>
+if (localStorage.getItem("loginStarted") !== "true") {
+  window.location.href = "login.html";
+}
+</script>
+
 </head>
 
 <style>

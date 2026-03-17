@@ -49,7 +49,8 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(cors({
   origin: ALLOWED_ORIGINS,
-  methods: ['GET', 'POST']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // ✅ Serve static files (so /gigz.html works)
@@ -62,7 +63,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: ALLOWED_ORIGINS,
-    methods: ['GET', 'POST']
+    methods: ['GET', 'POST', 'PUT', 'DELETE']
   }
 });
 

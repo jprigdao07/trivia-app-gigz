@@ -1517,14 +1517,14 @@ editQuestionBtn.addEventListener("click", async function () {
     return;
   }
 
-  const questionData = {
-    questionText: questionText,
-    correctAnswer: correctAnswer,
-    wrongAnswer: wrongAnswer,
-    imageFile: imageFile,
-    tags: tagsQuestions,
-    multiple_choice: multipleChoice  // ✅ Ensure correct field name
-  };
+    const questionData = {
+      question_text: questionText,
+      correct_answer: correctAnswer,
+      wrong_answer: wrongAnswer,
+      imageFile: imageFile,
+      tags: tagsQuestions,
+      multiple_choice: multipleChoice
+    };
 
   console.log("📦 Question Data Before Sending:", JSON.stringify(questionData, null, 2));
 
