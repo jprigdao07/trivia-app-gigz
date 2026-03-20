@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 24, 2026 at 10:56 AM
+-- Generation Time: Mar 20, 2026 at 10:25 AM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- PHP Version: 8.1.25
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -184,6 +184,7 @@ INSERT INTO `games` (`id`, `status`, `created_at`, `day`, `location`, `team_a_sc
 ('c211f7e6-5476-46c3-97c2-d7ead9f4277e', 'active', '2025-11-29 04:19:08', '2025-11-29 12:19:00', 'Starbucks', 0, 0, 0, 938, '2025-11-29 12:19:00'),
 ('c46b5071-2d81-47b0-9d38-e147530dc828', 'active', '2025-11-27 10:56:00', '2025-11-27 18:56:00', 'BULGARIA', 0, 0, 0, 908, '2025-11-27 18:56:00'),
 ('ccb557dc-d94b-4a5a-b00d-2b2968a84317', 'active', '2025-11-28 11:29:19', '2025-11-28 19:30:00', 'dqqqqwdwq', 0, 0, 0, 930, '2025-11-28 19:30:00'),
+('df22cae9-cf0d-4971-a89d-a03af8ceea47', 'active', '2026-03-16 05:28:49', '2026-03-16 13:28:00', 'Cassanova', 0, 0, 0, 953, '2026-03-16 13:28:00'),
 ('dfac23f9-f56c-48ec-a75e-5007e09f2f93', 'active', '2025-11-27 11:10:37', '2025-11-27 19:11:00', 'HARARAA', 0, 0, 0, 911, '2025-11-27 19:11:00'),
 ('e9c75082-8b79-4a1a-af2d-420b2828156b', 'active', '2025-11-27 11:07:15', '2025-11-27 19:08:00', 'GARARARA', 0, 0, 0, 910, '2025-11-27 19:08:00'),
 ('ec2ac4a4-746e-4d14-b0ce-7a364f797b9e', 'active', '2025-11-27 09:56:48', '2025-11-27 17:57:00', 'Main Hall', 0, 0, 0, 901, '2025-11-27 17:57:00'),
@@ -531,7 +532,7 @@ CREATE TABLE `questions` (
 --
 
 INSERT INTO `questions` (`id`, `category_id`, `multiple_choice`, `question_text`, `correct_answer`, `wrong_answer`, `tags`, `created_at`, `round_id`) VALUES
-(1, 1, '0', 'Who was president when the Gulf War started?!!!!', 'George W. Bush', '', NULL, '2025-06-28 03:59:33', 1),
+(1, 1, '0', 'Who was the president when the Gulf War started?', 'George W. Bush', '', NULL, '2025-06-28 03:59:33', 1),
 (2, 1, '0', 'General Robert E. Lee surrendered in which US state?', 'Virginia', 'California, Washington', NULL, '2025-06-28 03:59:33', 1),
 (3, 4, '0', 'What was the first car company to sell a passenger airbag to the public?', 'General Motors', '', NULL, '2025-08-25 07:43:27', 4),
 (7, 3, NULL, 'Which country has won the most overall medals in the summer Olympics?', 'United States', '', NULL, '2025-06-28 03:59:33', 3),
@@ -556,13 +557,13 @@ INSERT INTO `questions` (`id`, `category_id`, `multiple_choice`, `question_text`
 (30, 11, NULL, 'What is the deepest part of the Mariana Trench called? \r\n', 'Challenger Deep', '', NULL, '2025-06-28 04:21:04', 11),
 (31, 11, '[\"Benitoite\", \"Musgravite\", \"Painite\"]', 'What is the rarest type of gemstone on Earth?', 'Painite', '', NULL, '2025-06-28 04:21:04', 11),
 (35, 13, NULL, 'What volcanic event is believed to have led to the demise of the Minoan civilization?\r\n', 'Thera Eruption', '', NULL, '2025-06-28 04:21:54', 13),
-(36, 13, '0', 'Which ancient civilization built the Temple of Karnak?!!!!!!', 'Egyptian', '', NULL, '2025-06-28 04:21:54', 13),
+(36, 13, '0', 'Which ancient civilization built the Temple of Karnak?', 'Egyptian', '', NULL, '2025-06-28 04:21:54', 13),
 (37, 14, '0', 'Question 12345', 'Sample 1', '', NULL, '2025-06-28 04:22:06', 14),
 (38, 14, '0', 'Question 2', 'Sample 2', '', NULL, '2025-06-28 04:22:06', 14),
 (39, 14, '0', 'Question 3', 'Sample 3', '', NULL, '2025-06-28 04:22:06', 14),
 (43, 13, '[\"1914\", \"1924\", \"1934\"]', 'In German History, what year did  \"The Night of the Long Knives\" happen?', '1934', '1900, 1901, 1905', 'History', '2025-06-30 03:31:30', 13),
 (64, 2, NULL, 'What ocean borders Brazil?', 'Atlantic Ocean', 'Indian Ocean; Pacific Ocean', 'Geography', '2025-08-05 03:26:21', 2),
-(65, 2, '0', 'What is the capital of Northern Ireland?', 'Belfast!!!!', '', NULL, '2025-08-05 03:28:37', 2),
+(65, 2, '0', 'What is the capital of Northern Ireland?', 'Belfast', '', NULL, '2025-08-05 03:28:37', 2),
 (66, 2, '[\"Mauna Kea\", \"Mauna Loa\", \"Kilauea\"]', 'What is the name of the volcano in Hawaii that is constantly spewing lava?', 'Kilauea', 'Mayon', 'Geography', '2025-08-05 03:30:32', 2),
 (96, 1, '[\"1865\", \"1875\", \"1885\"]', 'What year was Abraham Lincoln assassinated?', '1865', '', NULL, '2025-08-21 07:42:30', 1);
 
@@ -30264,7 +30265,51 @@ INSERT INTO `quiz_questions` (`id`, `round_id`, `question_text`, `correct_answer
 (29505, '51023395', 'Name something you might find in a billionaire\'s mansion.', '', '', '2026-01-22 12:24:05'),
 (29506, '51023400', '/uploads/Media1.mp4', 'Zootopia', '', '2026-01-22 12:24:05'),
 (29507, '51023400', '/uploads/Media2.mp4', 'Boy Erased', '', '2026-01-22 12:24:05'),
-(29508, '51023400', '/uploads/Media3.mp4', '13 Going On 30', '', '2026-01-22 12:24:05');
+(29508, '51023400', '/uploads/Media3.mp4', '13 Going On 30', '', '2026-01-22 12:24:05'),
+(29509, '51023416', 'Who was president when the Gulf War started?!!!!', 'George W. Bush', '', '2026-03-16 13:28:50'),
+(29510, '51023416', 'General Robert E. Lee surrendered in which US state?', 'Virginia', 'California, Washington', '2026-03-16 13:28:50'),
+(29511, '51023416', 'What year was Abraham Lincoln assassinated?', '1865', '', '2026-03-16 13:28:50'),
+(29512, '51023417', 'What ocean borders Brazil?', 'Atlantic Ocean', 'Indian Ocean; Pacific Ocean', '2026-03-16 13:28:50'),
+(29513, '51023417', 'What is the capital of Northern Ireland?', 'Belfast!!!!', '', '2026-03-16 13:28:50'),
+(29514, '51023417', 'What is the name of the volcano in Hawaii that is constantly spewing lava?', 'Kilauea', 'Mayon', '2026-03-16 13:28:50'),
+(29515, '51023418', 'Which country has won the most overall medals in the summer Olympics?', 'United States', '', '2026-03-16 13:28:50'),
+(29516, '51023418', 'Which NFL team won Super Bowl LIII (53) played in 2019?', 'New England Patriots', '', '2026-03-16 13:28:50'),
+(29517, '51023418', 'Which WNBA player was the first to dunk twice during a game?', 'Brittney Griner', '', '2026-03-16 13:28:50'),
+(29518, '51023419', 'What was the first car company to sell a passenger airbag to the public?', 'General Motors', '', '2026-03-16 13:28:50'),
+(29519, '51023419', 'Which element has the atomic number 1?', 'Hydrogen', '', '2026-03-16 13:28:50'),
+(29520, '51023419', 'What is the primary protocol used to transfer web pages on the internet?', 'HTTP', '', '2026-03-16 13:28:50'),
+(29521, '51023420', 'Who Am I?', 'Julian Edelman', 'sample', '2026-03-16 13:28:50'),
+(29522, '51023420', 'Who Am I?', 'Nick Jonas', '', '2026-03-16 13:28:50'),
+(29523, '51023420', 'Who Am I?', 'Harry R. Truman', '', '2026-03-16 13:28:50'),
+(29524, '51023422', 'What is the name of the bear in the Jungle Book?', 'Baloo', 'Teddy', '2026-03-16 13:28:50'),
+(29525, '51023422', 'Sistine Chapel is located on which continent?', 'Europe', '', '2026-03-16 13:28:50'),
+(29526, '51023422', 'What does the Old Norse word \"Viking\" mean?', 'Pirate', '', '2026-03-16 13:28:50'),
+(29527, '51023423', 'Random Question 1', 'Tree of Life', 'sample', '2026-03-16 13:28:50'),
+(29528, '51023423', 'Random Question 2', 'A Quiet Place', 'sample', '2026-03-16 13:28:50'),
+(29529, '51023423', 'News of the World', 'News of the World', 'sample', '2026-03-16 13:28:50'),
+(29530, '51023424', 'Which actress played the role of Erin Brockovich in the movie titled \"Erin Brockovich\"?', 'Julia Roberts', '', '2026-03-16 13:28:50'),
+(29531, '51023424', 'What instrument is used in the Game of Thrones theme song?\r\n', 'Cello', '', '2026-03-16 13:28:50'),
+(29532, '51023424', 'Which 2014 film was notable for being filmed with the same cast over 12 years?', 'Boyhood', '', '2026-03-16 13:28:50'),
+(29533, '51023425', 'Name a famous classic arcade game.', '', '', '2026-03-16 13:28:50'),
+(29534, '51023426', 'The most species of Hummingbirds can be found on which continent? \r\n', 'South America', '', '2026-03-16 13:28:50'),
+(29535, '51023426', 'What is the deepest part of the Mariana Trench called? \r\n', 'Challenger Deep', '', '2026-03-16 13:28:50'),
+(29536, '51023426', 'What is the rarest type of gemstone on Earth?', 'Painite', '', '2026-03-16 13:28:50'),
+(29537, '51023428', 'What volcanic event is believed to have led to the demise of the Minoan civilization?\r\n', 'Thera Eruption', '', '2026-03-16 13:28:50'),
+(29538, '51023428', 'Which ancient civilization built the Temple of Karnak?!!!!!!', 'Egyptian', '', '2026-03-16 13:28:50'),
+(29539, '51023428', 'In German History, what year did  \"The Night of the Long Knives\" happen?', '1934', '1900, 1901, 1905', '2026-03-16 13:28:50'),
+(29540, '51023429', 'Question 12345', 'Sample 1', '', '2026-03-16 13:28:50'),
+(29541, '51023429', 'Question 2', 'Sample 2', '', '2026-03-16 13:28:50'),
+(29542, '51023429', 'Question 3', 'Sample 3', '', '2026-03-16 13:28:50'),
+(29543, '51023421', '/uploads/1754990931271.mp3', 'Back In Black', '', '2026-03-16 13:28:50'),
+(29544, '51023421', '/uploads/1754991129532.mp3', 'Jeremy', '', '2026-03-16 13:28:50'),
+(29545, '51023421', '/uploads/1754991412498.mp3', 'Somewhere With You', '', '2026-03-16 13:28:50'),
+(29546, '51023427', '/uploads/1754991887640.m4a', 'Wish You Were Here', '', '2026-03-16 13:28:50'),
+(29547, '51023427', '/uploads/1754992183449.m4a', 'Limelight', '', '2026-03-16 13:28:50'),
+(29548, '51023427', '/uploads/1754992363847.m4a', 'We\'re An American Band', '', '2026-03-16 13:28:50'),
+(29549, '51023425', 'Name something you might find in a billionaire\'s mansion.', '', '', '2026-03-16 13:28:50'),
+(29550, '51023430', '/uploads/Media1.mp4', 'Zootopia', '', '2026-03-16 13:28:50'),
+(29551, '51023430', '/uploads/Media2.mp4', 'Boy Erased', '', '2026-03-16 13:28:50'),
+(29552, '51023430', '/uploads/Media3.mp4', '13 Going On 30', '', '2026-03-16 13:28:50');
 
 -- --------------------------------------------------------
 
@@ -54402,7 +54447,37 @@ INSERT INTO `rounds` (`id`, `game_id`, `round_number`, `created_at`, `title`, `c
 (51023397, '11148d52-ed7e-4e05-ac42-e201632bda9c', 12, '2026-01-22 04:24:04', 'Round 12', 'Music'),
 (51023398, '11148d52-ed7e-4e05-ac42-e201632bda9c', 13, '2026-01-22 04:24:04', 'Round 13', 'World History'),
 (51023399, '11148d52-ed7e-4e05-ac42-e201632bda9c', 14, '2026-01-22 04:24:04', 'Round 14', 'Wager Round'),
-(51023400, '11148d52-ed7e-4e05-ac42-e201632bda9c', 15, '2026-01-22 04:24:04', 'Round 15', 'Name That Movie');
+(51023400, '11148d52-ed7e-4e05-ac42-e201632bda9c', 15, '2026-01-22 04:24:04', 'Round 15', 'Name That Movie'),
+(51023401, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 1, '2026-03-16 05:28:49', 'Round 1', 'American History'),
+(51023402, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 2, '2026-03-16 05:28:49', 'Round 2', 'Geography'),
+(51023403, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 3, '2026-03-16 05:28:49', 'Round 3', 'Sports'),
+(51023404, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 4, '2026-03-16 05:28:49', 'Round 4', 'Science & Tech'),
+(51023405, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 5, '2026-03-16 05:28:49', 'Round 5', 'Who Am I?'),
+(51023406, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 6, '2026-03-16 05:28:49', 'Round 6', 'Music Round'),
+(51023407, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 7, '2026-03-16 05:28:49', 'Round 7', 'Arts & Literature'),
+(51023408, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 8, '2026-03-16 05:28:49', 'Round 8', 'Random'),
+(51023409, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 9, '2026-03-16 05:28:49', 'Round 9', 'Entertainment'),
+(51023410, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 10, '2026-03-16 05:28:49', 'Round 10', 'Feud'),
+(51023411, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 11, '2026-03-16 05:28:49', 'Round 11', 'Nature'),
+(51023412, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 12, '2026-03-16 05:28:49', 'Round 12', 'Music Round'),
+(51023413, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 13, '2026-03-16 05:28:49', 'Round 13', 'World History'),
+(51023414, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 14, '2026-03-16 05:28:49', 'Round 14', 'Wager Round'),
+(51023415, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 15, '2026-03-16 05:28:49', 'Round 15', 'Final Round'),
+(51023416, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 1, '2026-03-16 05:28:50', 'Round 1', 'American History'),
+(51023417, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 2, '2026-03-16 05:28:50', 'Round 2', 'Geography'),
+(51023418, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 3, '2026-03-16 05:28:50', 'Round 3', 'Sports'),
+(51023419, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 4, '2026-03-16 05:28:50', 'Round 4', 'Science & Tech'),
+(51023420, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 5, '2026-03-16 05:28:50', 'Round 5', 'Who Am I?'),
+(51023421, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 6, '2026-03-16 05:28:50', 'Round 6', 'Music'),
+(51023422, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 7, '2026-03-16 05:28:50', 'Round 7', 'Arts & Literature'),
+(51023423, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 8, '2026-03-16 05:28:50', 'Round 8', 'Random'),
+(51023424, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 9, '2026-03-16 05:28:50', 'Round 9', 'Entertainment'),
+(51023425, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 10, '2026-03-16 05:28:50', 'Round 10', 'Feud'),
+(51023426, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 11, '2026-03-16 05:28:50', 'Round 11', 'Nature'),
+(51023427, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 12, '2026-03-16 05:28:50', 'Round 12', 'Music'),
+(51023428, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 13, '2026-03-16 05:28:50', 'Round 13', 'World History'),
+(51023429, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 14, '2026-03-16 05:28:50', 'Round 14', 'Wager Round'),
+(51023430, 'df22cae9-cf0d-4971-a89d-a03af8ceea47', 15, '2026-03-16 05:28:50', 'Round 15', 'Name That Movie');
 
 -- --------------------------------------------------------
 
@@ -54482,7 +54557,8 @@ INSERT INTO `teams` (`id`, `team_name`, `score`, `created_at`, `updated_at`, `qu
 (108, 'DWDWDWW', 0, '2025-11-28 18:24:46', '2025-11-28 18:24:46', 915, 1, 0),
 (109, 'D\'Gen Team', 364, '2026-01-22 12:24:49', '2026-01-24 09:40:36', 952, 1, 0),
 (110, 'Samara', 308, '2026-01-22 12:26:39', '2026-01-24 09:40:39', 952, 1, 0),
-(111, '5 Star', 319, '2026-01-22 12:27:12', '2026-01-24 09:40:37', 952, 1, 0);
+(111, '5 Star', 319, '2026-01-22 12:27:12', '2026-01-24 09:40:37', 952, 1, 0),
+(112, 'Team Sawilis', 270, '2026-03-16 13:29:56', '2026-03-20 09:13:12', 953, 1, 0);
 
 -- --------------------------------------------------------
 
@@ -54507,7 +54583,8 @@ CREATE TABLE `team_answers` (
 INSERT INTO `team_answers` (`id`, `team_id`, `round_index`, `question_index`, `correct`, `created_at`, `updated_at`) VALUES
 (1, 110, 0, 0, 0, '2026-01-23 18:55:39', '2026-01-24 17:40:40'),
 (3, 111, 0, 0, 0, '2026-01-23 18:55:42', '2026-01-24 17:40:37'),
-(4, 109, 0, 0, 2, '2026-01-23 18:55:43', '2026-01-24 17:40:36');
+(4, 109, 0, 0, 2, '2026-01-23 18:55:43', '2026-01-24 17:40:36'),
+(731, 112, 0, 0, 0, '2026-03-16 13:30:04', '2026-03-20 17:13:12');
 
 -- --------------------------------------------------------
 
@@ -54843,7 +54920,7 @@ ALTER TABLE `feud`
 -- AUTO_INCREMENT for table `games`
 --
 ALTER TABLE `games`
-  MODIFY `auto_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=953;
+  MODIFY `auto_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=954;
 
 --
 -- AUTO_INCREMENT for table `images`
@@ -54885,25 +54962,25 @@ ALTER TABLE `questions`
 -- AUTO_INCREMENT for table `quiz_questions`
 --
 ALTER TABLE `quiz_questions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29509;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29553;
 
 --
 -- AUTO_INCREMENT for table `rounds`
 --
 ALTER TABLE `rounds`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51023401;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51023431;
 
 --
 -- AUTO_INCREMENT for table `teams`
 --
 ALTER TABLE `teams`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=112;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=113;
 
 --
 -- AUTO_INCREMENT for table `team_answers`
 --
 ALTER TABLE `team_answers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=731;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1067;
 
 --
 -- AUTO_INCREMENT for table `wager_images`

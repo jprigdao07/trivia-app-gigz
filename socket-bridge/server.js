@@ -8,7 +8,6 @@ const cors = require('cors');
 const { randomUUID } = require('crypto');
 const gameRounds = {}; 
 
-const PORT = 8080;
 const ALLOWED_ORIGINS = [
   'http://localhost:4001',
   'http://localhost:8080',
@@ -64,7 +63,8 @@ const io = new Server(server, {
   cors: {
     origin: ALLOWED_ORIGINS,
     methods: ['GET', 'POST', 'PUT', 'DELETE']
-  }
+    },
+    transports: ["websocket", "polling"]
 });
 
 function verifyToken(token) {
@@ -630,7 +630,7 @@ app.get("/api/latest-countdown", async (req, res) => {
   }
 });
 
-
+const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
   console.log(`🚀 Socket.IO bridge running on http://localhost:${PORT}`);
 });

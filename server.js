@@ -30,8 +30,9 @@ const ALLOWED_ORIGINS = [
 const io = new Server(server, {
   cors: {
     origin: ALLOWED_ORIGINS,
-    methods: ['GET', 'POST', 'PUT']
-  }
+    methods: ['GET', 'POST', 'PUT', 'DELETE']
+    },
+  transports: ["websocket", "polling"]
 });
 
 
