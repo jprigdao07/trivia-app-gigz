@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gigz Login Flow</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Poppins", sans-serif;
+      background: #111;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      width: 100%;
+      max-width: 400px;
+      padding: 20px;
+      transition: opacity 0.5s ease;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: none;
+      border-radius: 8px;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      background: #ff005c;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #ff3380;
+    }
+
+    .back-btn {
+      background: #444;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Screen 1: Welcome -->
+  <div class="screen active" id="screen1">
+    <h1>Welcome to Gigz!</h1>
+    <p>Your Trivia Game Controller</p>
+    <button onclick="nextScreen(2)">Get Started</button>
+  </div>
+
+  <!-- Screen 2: Login -->
+  <div class="screen" id="screen2">
+    <h1>Login</h1>
+    <input type="text" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
+    <button onclick="nextScreen(3)">Login</button>
+    <button class="back-btn" onclick="prevScreen(1)">Back</button>
+  </div>
+
+  <!-- Screen 3: OTP Verification -->
+  <div class="screen" id="screen3">
+    <h1>Enter OTP</h1>
+    <input type="text" id="otp" placeholder="Enter 6-digit code" maxlength="6" />
+    <button onclick="nextScreen(4)">Verify</button>
+    <button class="back-btn" onclick="prevScreen(2)">Back</button>
+  </div>
+
+  <!-- Screen 4: Create Game -->
+  <div class="screen" id="screen4">
+    <h1>Create a New Game</h1>
+    <input type="text" id="gameName" placeholder="Enter Game Name" />
+    <button onclick="nextScreen(5)">Next</button>
+    <button class="back-btn" onclick="prevScreen(3)">Back</button>
+  </div>
+
+  <!-- Screen 5: Join Game -->
+  <div class="screen" id="screen5">
+    <h1>Join an Existing Game</h1>
+    <input type="text" id="gameCode" placeholder="Enter Game Code" />
+    <button onclick="nextScreen(6)">Join</button>
+    <button class="back-btn" onclick="prevScreen(4)">Back</button>
+  </div>
+
+  <!-- Screen 6: Dashboard -->
+  <div class="screen" id="screen6">
+    <h1>Welcome, Host!</h1>
+    <p>You are now logged in and ready to manage your trivia game.</p>
+    <button onclick="alert('Start Game Coming Soon!')">Start Game</button>
+    <button class="back-btn" onclick="prevScreen(5)">Back</button>
+  </div>
+
+  <script>
+    let currentScreen = 1;
+
+    function nextScreen(screenNumber) {
+      document.getElementById(`screen${currentScreen}`).classList.remove("active");
+      document.getElementById(`screen${screenNumber}`).classList.add("active");
+      currentScreen = screenNumber;
+    }
+
+    function prevScreen(screenNumber) {
+      document.getElementById(`screen${currentScreen}`).classList.remove("active");
+      document.getElementById(`screen${screenNumber}`).classList.add("active");
+      currentScreen = screenNumber;
+    }
+  </script>
+</body>
+</html>

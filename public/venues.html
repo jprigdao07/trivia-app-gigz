@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css" />
+    <title>Venues</title>
+</head>
+<body>
+    
+<style>
+    body{
+      height: 100vh;
+      background: url("trivia-app.PNG");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      overflow: auto;
+    }
+
+    .modal{
+      display:none;
+      position:fixed;
+      z-index:999;
+      left:0;
+      top:0;
+      padding: 20px;
+      width:100%;
+      height:100%;
+      background:rgba(0,0,0,0.6);
+      justify-content:center;
+      align-items:center;
+}
+
+    .modal-content{
+      background: linear-gradient(135deg, rgb(0, 122, 223), rgb(0, 236, 188));
+      padding:20px;
+      border-radius:10px;
+      width:400px;
+      max-width:90%;
+      color:white;
+    }
+
+    .close{
+      float:right;
+      font-size:22px;
+      cursor:pointer;
+    }
+    </style>
+
+    <header class="top-nav">
+      <div class="logo-container">
+        <img src="logo_gradient.png" alt="Company Logo" class="logo" />
+      </div>
+      <nav class="nav-links">
+        <a href="dashboard.html">Home</a>
+        <a href="questionstab.html">Questions</a>
+        <a href="quizzes.html">Quizzes</a>
+        <a href="#">Users</a>
+        <a href="venues.html" class="active">Venues</a>
+        <a href="#">Hosts</a>
+        <a href="#">Billing</a>
+        <a href="#">Analytics</a>
+      </nav>
+      <button class="sign-out">Sign Out</button>
+    </header>
+
+   <!-- Rounds Control -->
+<section id="rounds" class="page">
+
+  <div id="quizModal" class="modal">
+  <div class="modal-content">
+    <span id="closeModal" class="close">&times;</span>
+    <div id="modalBody"></div>
+  </div>
+</div>
+  
+  <div class="session-info">
+  <center>
+      <h1 style="margin-top: 1rem; color: #ccc;">Venues</h1>
+
+     <div id="quizList" class="left-panel" style="
+        width: 50%;
+        min-height: 100%;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 20px;
+        padding: 30px;
+        overflow-y: auto;
+        max-height: 100%;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: #00bcd4 #111;
+  ">
+      <!-- Quizzes populated by JS -->
+  </div>
+  </center>
+  </div>
+</section>
+
+<script>
+    
+// === POPULATE QUIZ LIST IN CONTROLLER APP ===
+async function populateQuizList() {
+  try {
+    const response = await fetch('http://192.168.1.77:4001/api/quizzes');
+    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+    let quizzes = await response.json();
+
+    // Sort newest first
+    quizzes.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    const quizList = document.getElementById('quizList');
+    quizList.innerHTML = '';
+
+    if (!Array.isArray(quizzes) || !quizzes.length) {
+      quizList.innerHTML = '<p style="color:#bbb;">No quizzes found.</p>';
+      return;
+    }
+
+    quizzes.forEach(q => {
+      const title = q.location || q.title || `Quiz #${q.game_id || 'N/A'}`;
+      const createdAt = q.created_at ? new Date(q.created_at).toLocaleString() : 'Unknown';
+      const status = q.status || 'Inactive';
+
+      const div = document.createElement('div');
+      div.className = 'quiz-item';
+      div.dataset.id = q.game_id;
+      div.style = `
+        border: 1px solid #555;
+        padding: 20px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        border-radius: 6px;
+        background: black;
+        color: #fff;
+        transition: background 0.2s;
+        opacity: ${status.toLowerCase() === 'active' ? 1 : 0.5};
+      `;
+
+      div.innerHTML = `<strong><h1>📍 ${title}</h1></strong>`;
+      // <br><small>Created: ${createdAt} | Status: ${status}</small>`;
+
+      div.addEventListener("click", () => {
+
+      const modal = document.getElementById("quizModal");
+      const modalBody = document.getElementById("modalBody");
+
+      modalBody.innerHTML = `
+        <strong>Location: ${title}</strong><br>
+        <small>Created: ${createdAt} | Status: ${status}</small>
+      `;
+
+      modal.style.display = "flex";
+
+});
+
+      div.addEventListener('mouseover', () => div.style.background = 'rgba(255,255,255,0.2)');
+      // div.addEventListener('mouseout', () => div.style.background = 'rgba(255,255,255,0.08)');
+      quizList.appendChild(div);
+    });
+
+  } catch (err) {
+    console.error('❌ Failed to load quizzes:', err);
+    document.getElementById('quizList').innerHTML =
+      `<p style="color:red;">Failed to load quizzes. Make sure server is running at http://192.168.1.77:4001</p>`;
+  }
+}
+
+
+const modal = document.getElementById("quizModal");
+const closeModal = document.getElementById("closeModal");
+
+closeModal.onclick = () => modal.style.display = "none";
+
+window.onclick = (event) => {
+  if (event.target === modal) {
+    modal.style.display = "none";
+  }
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  populateQuizList();
+});
+</script>
+
+<script src="script.js"></script>
+</body>
+</html>

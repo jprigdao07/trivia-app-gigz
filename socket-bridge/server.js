@@ -11,10 +11,12 @@ const gameRounds = {};
 const ALLOWED_ORIGINS = [
   'http://localhost:4001',
   'http://localhost:8080',
+  "https://localhost:8080",
   'http://localhost:3000',
   'http://192.168.1.77:8080',
   'http://192.168.1.77:3000',
-  'http://192.168.1.77:4001'
+  'http://192.168.1.77:4001',
+  "https://192.168.1.77:8081"
 ];
 const CONTROLLER_SECRET = 'secret123';
 

@@ -118,11 +118,13 @@ app.use(cors({
   origin: function (origin, callback) {
     const allowedOrigins = [
       "http://localhost:8080",
+      "https://localhost:8080",
       "http://localhost:4001",
       "http://127.0.0.1:8080",
       "http://127.0.0.1:4001",
       "http://192.168.1.77:8080",
-      "http://192.168.1.77:4001"
+      "http://192.168.1.77:4001",
+      "https://192.168.1.77:8081"
     ];
 
     // allow non-browser requests (Postman, curl)
@@ -131,7 +133,7 @@ app.use(cors({
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error("Not allowed by CORS"));
+      callback(null, false);
     }
   },
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
