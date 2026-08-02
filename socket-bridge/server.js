@@ -1,4 +1,5 @@
 // socket-bridge/server.js
+console.log("🚀 CONTROLLER SERVER STARTED - session-summary build");
 const express = require('express');
 const http = require('http');
 const path = require('path');
@@ -69,6 +70,34 @@ const io = new Server(server, {
     transports: ["websocket", "polling"]
 });
 
+
+const { io: Client } = require("socket.io-client");
+
+const clusterSocket = Client("http://192.168.1.88:5000", {
+  transports: ["websocket"]
+});
+
+
+console.log("🚀 Creating connection to SBC Cluster Server...");
+
+clusterSocket.on("connect", () => {
+  console.log("✅ Connected to SBC Cluster Server");
+  console.log("Socket ID:", clusterSocket.id);
+});
+
+clusterSocket.on("disconnect", reason => {
+  console.log("❌ Disconnected:", reason);
+});
+
+clusterSocket.on("connect_error", err => {
+  console.error("❌ Connection Error");
+  console.error(err.message);
+});
+
+clusterSocket.on("error", err => {
+  console.error("❌ Socket Error:", err);
+});
+
 function verifyToken(token) {
   return token && token === CONTROLLER_SECRET;
 }
@@ -76,12 +105,82 @@ function verifyToken(token) {
 // 🧠 Global variable to store the latest active Game ID
 let latestGameId = null;
 
+// Timer used to automatically clear the active game at midnight
+let latestGameCleanupTimer = null;
+
+
+// =============================================
+// 🕛 SCHEDULE SERVER MIDNIGHT CLEANUP
+// =============================================
+function scheduleLatestGameCleanup() {
+
+  // Cancel previous timer if there is one
+  if (latestGameCleanupTimer) {
+    clearTimeout(latestGameCleanupTimer);
+  }
+
+  const now = new Date();
+
+  const midnight = new Date(now);
+  midnight.setHours(24, 0, 0, 0);
+
+  const delay = midnight - now;
+
+  console.log(
+    `🕛 Server cleanup scheduled in ${Math.round(delay / 1000)} seconds`
+  );
+
+  latestGameCleanupTimer = setTimeout(() => {
+
+    console.log("🗑 Midnight reached");
+
+    latestGameId = null;
+
+    console.log("✅ latestGameId cleared");
+
+    io.emit("latest-game-id-updated", {
+      id: null
+    });
+
+  }, delay);
+
+}
+
+// =============================================
+// 🕛 SCHEDULE SERVER CLEANUP (TEST MODE) Server
+// =============================================
+// function scheduleLatestGameCleanup() {
+
+//     if (latestGameCleanupTimer) {
+//         clearTimeout(latestGameCleanupTimer);
+//     }
+
+//     console.log("🧪 TEST MODE: Server cleanup scheduled in 20 seconds");
+
+//     latestGameCleanupTimer = setTimeout(() => {
+
+//         console.log("🗑 TEST MODE: Server cleanup");
+
+//         latestGameId = null;
+
+//         console.log("✅ latestGameId cleared");
+
+//         // Don't broadcast null during testing.
+//         // io.emit("latest-game-id-updated", { id: null });
+
+//     }, 20000);
+// }
+
 // ✅ API to set the latest active game ID
 app.post('/api/set-latest-game-id', express.json(), (req, res) => {
   const { id } = req.body;
   if (!id) return res.status(400).json({ error: 'Missing id' });
 
   latestGameId = id;
+  console.log('🔗 Latest Game ID updated to:', id);
+
+  scheduleLatestGameCleanup();
+
   console.log('🔗 Latest Game ID updated to:', id);
 
   // 🔁 Broadcast to all connected controllers
@@ -92,7 +191,16 @@ app.post('/api/set-latest-game-id', express.json(), (req, res) => {
 
 // ✅ Optional: endpoint for controller to check current active game
 app.get('/api/get-latest-game-id', (req, res) => {
-  res.json({ id: latestGameId });
+
+  console.log("========== GET ACTIVE GAME ==========");
+  console.log(global.activeGame);
+  console.log("latestGameId:", latestGameId);
+  console.log("====================================");
+
+      res.json({
+        id: global.activeGame?.gameId ?? null,
+        scheduledStart: global.activeGame?.scheduledStart ?? null
+    });
 });
 
 // ✅ Start Countdown API → triggers the event for the correct room
@@ -120,6 +228,70 @@ app.post("/api/start-countdown", (req, res) => {
 io.on("connection", (socket) => {
   const { role, gameId } = socket.handshake.auth || {};
   console.log(`🟢 New client connected: ${socket.id} (${role || "unknown"})`);
+
+    console.log("Client connected:", socket.id);
+
+  // =========================================
+  // RELAY QUIZ PACKAGE TO SLAVES
+  // =========================================
+  socket.on("master:quiz_data", (payload) => {
+
+    console.log("📡 Relaying quiz package to slaves");
+
+    socket.broadcast.emit("master:quiz_data", payload);
+
+  });
+
+
+// =============================================
+// 🔍 RECEIVE QUIZ VALIDATION STATUS FROM SLAVE
+// =============================================
+socket.on("slave:quiz_ready", (payload) => {
+
+  console.log("📥 SLAVE QUIZ VALIDATION RESPONSE");
+
+  console.log("Device ID:", payload.deviceId);
+  console.log("Game ID:", payload.gameId);
+  console.log("Status:", payload.status);
+  console.log("Quiz Version:", payload.quizVersion);
+
+  // =============================================
+  // 📡 FORWARD TO SBC CLUSTER SERVER
+  // =============================================
+  console.log("📡 ABOUT TO FORWARD QUIZ SYNC UPDATE");
+
+
+  console.log("clusterSocket.connected =", clusterSocket.connected);
+  console.log("clusterSocket.id =", clusterSocket.id);
+
+  clusterSocket.emit("quiz-sync-update", {
+    deviceId: payload.deviceId,
+    gameId: payload.gameId,
+    status: payload.status,
+    quizVersion: payload.quizVersion,
+    reason: payload.reason,
+    expectedVersion: payload.expectedVersion
+  });
+
+  console.log(
+    "📡 QUIZ SYNC UPDATE SENT TO CLUSTER SERVER:",
+    payload.deviceId
+  );
+
+  if (payload.status === "ok") {
+
+    console.log("✅ SLAVE QUIZ VALIDATION PASSED");
+
+  } else {
+
+    console.error("❌ SLAVE QUIZ VALIDATION FAILED");
+    console.error("Reason:", payload.reason);
+    console.error("Expected Version:", payload.expectedVersion);
+    console.error("Actual Version:", payload.quizVersion);
+
+  }
+
+});
 
   // ✅ Always join global room (for cross-game events)
   socket.join("global");
@@ -163,7 +335,9 @@ io.on("connection", (socket) => {
     if (!gameId) return;
     console.log("🎯 [controller] selected quiz:", gameId);
     const room = `game:${gameId}`;
-    io.to(room).emit("controller:selected_quiz", { gameId });
+    // io.emit("controller:selected_quiz", { gameId });
+    // io.to(room).emit("controller:selected_quiz", { gameId });
+    io.emit("controller:selected_quiz", { gameId });
     io.emit("controller:selected_quiz_global", { gameId });
     console.log(`📢 Broadcasted controller:selected_quiz to room: ${room} + global`);
   });
@@ -212,24 +386,24 @@ socket.on("controller:start_countdown", ({ gameId }) => {
   });
 
 // 🎯 Controller selected a quiz → broadcast globally (for testing)
-socket.on("controller:selected_quiz", ({ gameId }) => {
-  console.log("🎯 [controller] selected quiz:", gameId);
+// socket.on("controller:selected_quiz", ({ gameId }) => {
+//   console.log("🎯 [controller] selected quiz:", gameId);
 
-  if (!gameId) {
-    console.warn("⚠️ Missing gameId in controller:selected_quiz");
-    return;
-  }
+//   if (!gameId) {
+//     console.warn("⚠️ Missing gameId in controller:selected_quiz");
+//     return;
+//   }
 
-  const roomName = `game:${gameId}`;
+//   const roomName = `game:${gameId}`;
 
-  // ✅ Send to the specific game room
-  io.to(roomName).emit("controller:selected_quiz", { gameId });
+//   // ✅ Send to the specific game room
+//   io.to(roomName).emit("controller:selected_quiz", { gameId });
 
-  // 🌐 Also broadcast globally (backup for any client not yet in room)
-  io.emit("controller:selected_quiz_global", { gameId });
+//   // 🌐 Also broadcast globally (backup for any client not yet in room)
+//   io.emit("controller:selected_quiz_global", { gameId });
 
-  console.log(`📢 Broadcasted controller:selected_quiz to room: ${roomName} + global`);
-});
+//   console.log(`📢 Broadcasted controller:selected_quiz to room: ${roomName} + global`);
+// });
 
 // 🏆 Controller sends updated scores
 socket.on("controller:update_score", ({ gameId, roundIndex, scores }) => {
@@ -297,6 +471,21 @@ socket.on("quiz:new_created", ({ gameId }) => {
 //   console.log("🔁 Broadcasting countdown start:", data);
 //   io.emit("start-countdown", data); // Send to all displays
 // });
+    socket.on("master:session_uploaded", (payload) => {
+
+        console.log("📦 Session uploaded:", payload.gameId);
+
+        io.emit("session-uploaded", payload);
+
+    });
+
+    socket.on("controller:session_complete", ({ gameId }) => {
+
+    console.log("📦 [controller] Session complete:", gameId);
+
+    io.emit("controller:session_complete", { gameId });
+
+});
 });
 
 // =====================================================
@@ -520,6 +709,92 @@ app.get("/api/team-answers/:teamId/:roundIndex", async (req, res) => {
   }
 });
 
+// =====================================================
+// 📦 GET SESSION SUMMARY
+// =====================================================
+app.get("/api/session-summary", async (req, res) => {
+
+  try {
+
+    const { gameId } = req.query;
+
+    if (!gameId) {
+      return res.status(400).json({
+        success: false,
+        message: "gameId is required"
+      });
+    }
+
+    // Find the game
+    const [games] = await db.execute(
+      "SELECT * FROM games WHERE id = ?",
+      [gameId]
+    );
+
+    if (!games.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Game not found"
+      });
+    }
+
+    const game = games[0];
+
+    // Numeric quiz_id used by teams table
+    const quizId = game.auto_id;
+
+    // Get all teams
+    const [teams] = await db.execute(
+      `SELECT
+          id,
+          team_name,
+          score,
+          is_active,
+          order_index
+       FROM teams
+       WHERE quiz_id = ?
+       ORDER BY score DESC`,
+      [quizId]
+    );
+
+    // Top 3
+    const topTeams = teams.slice(0, 3);
+
+    res.json({
+
+      success: true,
+
+      session: {
+
+        gameId: game.id,
+
+        completedAt: new Date().toISOString(),
+
+        game: {
+          day: game.day,
+          location: game.location
+        },
+
+        topTeams,
+
+        teams
+
+      }
+
+    });
+
+  } catch (err) {
+
+    console.error("❌ Error building session summary:", err);
+
+    res.status(500).json({
+      success: false,
+      message: err.message
+    });
+
+  }
+
+});
 
 // =====================================================
 // 📦 QUIZ DATA (teams + scores) — quiz specific
@@ -571,6 +846,12 @@ app.post("/api/show-final-scores", async (req, res) => {
 
 // POST /api/set-active-game
 app.post("/api/set-active-game", (req, res) => {
+
+  console.log("========== SET ACTIVE GAME ==========");
+  console.log(req.body);
+  console.log(global.activeGame);
+  console.log("=====================================");
+
   const { gameId, scheduledStart } = req.body;
   if (!gameId) return res.status(400).json({ error: "Missing gameId" });
 
@@ -579,6 +860,12 @@ app.post("/api/set-active-game", (req, res) => {
     scheduledStart: scheduledStart || new Date().toISOString(),
     started: false
   };
+
+  latestGameId = gameId;
+
+  console.log("latestGameId:", latestGameId);
+
+  console.log("latestGameId AFTER SET:", latestGameId);
 
   console.log("🎯 Active game set:", global.activeGame);
   res.json({ success: true, activeGame: global.activeGame });

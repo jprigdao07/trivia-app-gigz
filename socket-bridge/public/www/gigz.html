@@ -262,69 +262,107 @@ document.addEventListener("DOMContentLoaded", () => {
   const pages = document.querySelectorAll(".page");
 
   // Toggle menu
-  menuToggle.addEventListener("click", () => {
-    navbarLinks.classList.toggle("show");
-  });
-
-  // ✅ Central page switcher
-function showPage(target) {
-  console.log("Switching to:", target);
-
-  pages.forEach(p => (p.style.display = "none"));
-  navItems.forEach(n => n.classList.remove("active"));
-
-  const page = document.getElementById(target);
-  if (page) page.style.display = "block";
-
-  // 🔥 SAFE CHECK (FIXES YOUR ERROR)
-  const nav = document.querySelector(`.nav-item[data-target="${target}"]`);
-  if (nav) {
-    nav.classList.add("active");
+  if (menuToggle && navbarLinks) {
+    menuToggle.addEventListener("click", () => {
+      navbarLinks.classList.toggle("show");
+    });
   }
-}
 
-    // ✅ Nav clicks
-navItems.forEach(item => {
-  item.addEventListener("click", e => {
+  // =============================================
+  // CENTRAL PAGE SWITCHER
+  // =============================================
+  function showPage(target) {
 
-    const target = item.getAttribute("data-target");
-    const href = item.getAttribute("href");
+    console.log("🔄 Switching to:", target);
 
-    // 🌐 external (dashboard)
-    if (!target && href && href.startsWith("http")) {
-      window.location.href = href;
-      return;
+    // Hide all pages
+    pages.forEach(page => {
+      page.style.display = "none";
+    });
+
+    // Remove active state
+    navItems.forEach(nav => {
+      nav.classList.remove("active");
+    });
+
+    // Show requested page
+    const page = document.getElementById(target);
+
+    if (page) {
+      page.style.display = "block";
+    } else {
+      console.warn("⚠️ Page not found:", target);
     }
 
-    // 🧭 internal navigation
-    if (!target) return;
+    // Activate matching navigation item
+    const nav = document.querySelector(
+      `.nav-item[data-target="${target}"]`
+    );
 
-    e.preventDefault();
-
-    showPage(target);
-
-    // 🔥 THIS IS THE KEY LINE
-    window.location.hash = target;
-  });
-});
-
-  // ✅ HANDLE URL HASH
-function router() {
-  const hash = window.location.hash.replace("#", "");
-
-  if (hash === "rounds" || hash === "scoreboard" || hash === "settings") {
-    showPage(hash);
-  } else {
-    showPage("dashboard");
+    if (nav) {
+      nav.classList.add("active");
+    }
   }
-}
 
-window.addEventListener("hashchange", router);
-router();
+  // =============================================
+  // NAVIGATION CLICK
+  // =============================================
+  navItems.forEach(item => {
 
-// run on hash change
-window.addEventListener("hashchange", router);
+    item.addEventListener("click", e => {
+
+      const target = item.getAttribute("data-target");
+
+      // Ignore links without data-target
+      if (!target) {
+        return;
+      }
+
+      e.preventDefault();
+
+      console.log("🖱️ Navigation clicked:", target);
+
+      // Update page
+      showPage(target);
+
+      // Update URL hash
+      window.location.hash = target;
+    });
+
+  });
+
+  // =============================================
+  // URL HASH ROUTER
+  // =============================================
+  function router() {
+
+    const hash = window.location.hash.replace("#", "");
+
+    console.log("🌐 Current hash:", hash);
+
+    const validPages = [
+      "dashboard",
+      "rounds",
+      "scoreboard",
+      "settings"
+    ];
+
+    if (validPages.includes(hash)) {
+      showPage(hash);
+    } else {
+      showPage("dashboard");
+    }
+
+  }
+
+  // Listen for hash changes
+  window.addEventListener("hashchange", router);
+
+  // Initial page
+  router();
+
 });
+
 </script>
 
 <script>
@@ -459,57 +497,13 @@ function renderDevices(devices) {
         ? "🔥 MASTER"
         : "🧩 SLAVE";
 
-
-    const quizSync =
-        role.includes("MASTER")
-        ? "👑 MASTER"
-        : device.quizSyncStatus === "synced"
-          ? "✅ SYNCED"
-          : "⚠️ NOT SYNCED";
-
-    // =============================================
-    // 🕒 LAST SUCCESSFUL COMMUNICATION
-    // =============================================
-    let lastCommunication = "N/A";
-
-    if (device.lastCommunication) {
-
-      const lastTime =
-        new Date(device.lastCommunication);
-
-      const secondsAgo =
-        Math.floor(
-          (Date.now() - device.lastCommunication) / 1000
-        );
-
-      if (secondsAgo < 5) {
-        lastCommunication = "Just now";
-      } else if (secondsAgo < 60) {
-        lastCommunication = `${secondsAgo} seconds ago`;
-      } else {
-
-        const minutesAgo =
-          Math.floor(secondsAgo / 60);
-
-        lastCommunication =
-          `${minutesAgo} minute${minutesAgo !== 1 ? "s" : ""} ago`;
-      }
-    }
-
     div.innerHTML = `
       <strong>${device.id}</strong>
       <br>
-      ${role} | ${status}
-      <br>
-      RSSI: ${device.rssi ?? "N/A"}
-      <br>
-      🕒 Last Communication: ${lastCommunication}
-      <br>
-      🔄 Quiz Sync: ${quizSync}
+      ${role} | ${status} | RSSI: ${device.rssi ?? "N/A"}
     `;
 
     container.appendChild(div);
-
 
   });
 

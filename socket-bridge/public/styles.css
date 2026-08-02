@@ -289,11 +289,11 @@ input {
 }
 
 .wifiBtn{
-  padding: 30px;
+  padding: 50px;
   border-radius: 10px;
   font-size: 25px;
   margin: auto;
-  width: 100%;
+  /* width: 100%; */
   font-weight: 600;
 }
 

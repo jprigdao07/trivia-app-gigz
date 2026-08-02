@@ -279,6 +279,9 @@ async function fetchScheduledStart(gameId) {
 // 🚀 MAIN APP INIT
 // =============================================
 document.addEventListener("DOMContentLoaded", async () => {
+
+  scheduleMidnightCleanup();
+
   try {
     // Load or request Game ID
     const storedGameId = localStorage.getItem("currentGameId");
@@ -286,23 +289,103 @@ document.addEventListener("DOMContentLoaded", async () => {
       window.currentGameId = storedGameId;
       console.log("🎲 Using stored Game ID:", window.currentGameId);
     } else {
-      const res = await fetch("http://192.168.1.77:8080/api/get-latest-game-id");
-      const data = await res.json();
-      if (!data.id) {
-        console.warn("⚠️ No active game ID found on server.");
-        return;
-      }
-      window.currentGameId = data.id;
-      localStorage.setItem("currentGameId", data.id);
-      console.log("🎲 Joined latest game:", window.currentGameId);
+  const res = await fetch("http://192.168.1.77:8080/api/get-latest-game-id");
+  const data = await res.json();
+
+if (!data.id) {
+
+    console.warn("⚠️ No active game ID found on server.");
+
+    window.currentGameId = null;
+
+} else {
+
+    console.log("✅ PASSED ACTIVE GAME CHECK");
+
+    window.currentGameId = data.id;
+
+    localStorage.setItem("currentGameId", data.id);
+
+    console.log("🎲 Joined latest game:", window.currentGameId);
+
+}
     }
 
     // =============================================
-    // 🔌 CONNECT TO SOCKET.IO
-    // =============================================
-    socket = io("http://192.168.1.77:8080", {
-      auth: { role: "quiz", gameId: window.currentGameId },
-    });
+// ⏳ COUNTDOWN WRAPPER
+// =============================================
+function startCountdownTimer(scheduledStart) {
+
+    console.log("⏳ Countdown requested:", scheduledStart);
+
+    // If React exposed a global trigger in the future, call it here.
+    if (typeof window.startCountdown === "function") {
+        window.startCountdown(scheduledStart);
+    } else {
+        console.warn("⚠️ Countdown UI is managed elsewhere.");
+    }
+}
+
+// =============================================
+// 🔌 CONNECT TO SOCKET.IO
+// =============================================
+
+// =============================================
+// DEVICE ROLE
+// =============================================
+
+window.deviceRole =
+  localStorage.getItem("deviceRole") || "slave";
+
+console.log(
+  "🧠 Device role:",
+  window.deviceRole
+);
+
+localStorage.setItem(
+  "deviceRole",
+  window.deviceRole
+);
+
+socket = io("http://192.168.1.77:8080", {
+  auth: { role: "quiz", gameId: window.currentGameId },
+});
+
+const clusterSocket = io("http://localhost:5000");
+
+clusterSocket.on("device-id", ({ id }) => {
+
+  console.log("📺 DEVICE ID EVENT RECEIVED:", id);
+
+  window.DEVICE_ID = id;
+
+  localStorage.setItem("deviceId", id);
+
+  console.log(
+    "📺 DEVICE ID STORED:",
+    window.DEVICE_ID
+  );
+
+});
+
+function getDeviceId() {
+
+  return (
+    window.DEVICE_ID ||
+    localStorage.getItem("deviceId") ||
+    null
+  );
+
+}
+
+clusterSocket.on("connect_error", (err) => {
+
+  console.error(
+    "❌ Cluster connection failed:",
+    err.message
+  );
+
+});
 
 socket.on("connect", () => {
   console.log("🎮 Quiz client connected:", socket.id);
@@ -331,73 +414,513 @@ socket.on("start-countdown", ({ gameId, scheduledStart }) => {
   }
 });
 
-    // =============================================
-    // 🎯 QUIZ SELECTED (controller)
-    // =============================================
+// =============================================
+// 🔌 SOCKET ROLE SYNC (GLOBAL LISTENER)
+// =============================================
+socket.on("role-update", (data) => {
+
+  console.log("ROLE UPDATE DATA:", data);
+  console.log("MY ROLE:", data.role);
+
+  window.deviceRole = data.role;
+
+  localStorage.setItem(
+    "deviceRole",
+    data.role
+  );
+
+  console.log(
+    "📡 ROLE UPDATED:",
+    window.deviceRole
+  );
+
+});
+
+clusterSocket.on("device-sync", (data) => {
+
+  if (!window.DEVICE_ID) return;
+
+  const myDevice = data.devices.find(
+    d => d.id === window.DEVICE_ID
+  );
+
+  if (!myDevice) return;
+
+  const oldRole = window.deviceRole;
+  const newRole = myDevice.role;
+
+  if (oldRole !== newRole) {
+
+    console.log(
+      `🔄 Role changed: ${oldRole} → ${newRole}`
+    );
+
+    window.deviceRole = newRole;
+
+    localStorage.setItem(
+      "deviceRole",
+      newRole
+    );
+
+  }
+
+});
+
+// =============================================
+// 📦 SESSION COMPLETE
+// =============================================
+socket.on("controller:session_complete", async ({ gameId }) => {
+
+      console.log("📦 controller:session_complete received", gameId);
+      console.log("ROLE:", window.deviceRole);
+
+    // Only the current Master uploads
+    if (window.deviceRole !== "master") return;
+
+    console.log("👑 I am the Master. Starting upload...");
+
+    try {
+
+        console.log("📦 MASTER collecting session data...");
+
+        // Fetch the official session summary from the controller
+        const res = await fetch(
+            `http://192.168.1.77:8080/api/session-summary?gameId=${gameId}`
+        );
+
+        const data = await res.json();
+
+        if (!data.success) {
+            console.error("❌ Failed to collect session summary.");
+            return;
+        }
+
+        console.log("========== MASTER INFO ==========");
+        console.log("window.DEVICE_ID:", window.DEVICE_ID);
+        console.log("localStorage deviceId:", localStorage.getItem("deviceId"));
+        console.log("window.deviceRole:", window.deviceRole);
+        console.log("=================================");
+
+        const masterDevice = window.DEVICE_ID || localStorage.getItem("deviceId");
+
+        if (!masterDevice) {
+            console.error("❌ Cannot upload session: Master device ID is unavailable.");
+            return;
+}
+        // Build the final batch payload
+        const uploadPayload = {
+
+
+            gameId: data.session.gameId,
+
+            completedAt: data.session.completedAt,
+
+            uploadedAt: new Date().toISOString(),
+
+             master: masterDevice,
+
+            game: data.session.game,
+
+            topTeams: data.session.topTeams,
+
+            teams: data.session.teams
+
+        };
+
+        console.log("========== UPLOAD PAYLOAD ==========");
+        console.log(JSON.stringify(uploadPayload, null, 2));
+        console.log("====================================");
+
+        console.log("📦 Batch payload:", uploadPayload);
+
+        // Upload the complete session
+        const upload = await fetch("/api/upload-session", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify(uploadPayload)
+
+        });
+
+        const result = await upload.json();
+
+        console.log("✅ Upload completed:", result);
+
+        if (result.success) {
+
+    socket.emit("master:session_uploaded", {
+
+        gameId: uploadPayload.gameId,
+
+        uploadedAt: uploadPayload.uploadedAt,
+
+        master: uploadPayload.master
+
+    });
+
+}
+
+    } catch (err) {
+
+        console.error("❌ Session upload failed:", err);
+
+    }
+
+});
+
+// =============================================
+// 🎯 QUIZ SELECTED (controller)
+// =============================================
+
+// SAFETY: ensure role always has a fallback
+if (!window.deviceRole) window.deviceRole = "slave";
+
 socket.on("controller:selected_quiz", async ({ gameId }) => {
   console.log("🎯 Controller selected quiz:", gameId);
   if (!gameId) return;
 
   window.currentGameId = gameId;
   localStorage.setItem("currentGameId", gameId);
+  const isMaster = window.deviceRole === "master";
+
+  console.log("ROLE AT RUNTIME:", window.deviceRole);
 
   // Join socket rooms
-  socket.emit("join_game_room", gameId);
-  socket.emit("join_game_room", "global");
+  // socket.emit("join_game_room", gameId);
+  // socket.emit("join_game_room", "global");
+  // Join the selected quiz room
+  socket.emit("joinRoom", { gameId });
 
-  // --- Wait until the quiz card exists in the DOM ---
-  const waitForCard = (gameId, maxRetries = 20) => new Promise((resolve, reject) => {
-    let tries = 0;
-    const check = async () => {
-      let card = document.querySelector(
-        `.quiz-card[data-id='${gameId}'], .quiz-card[data-quiz-id='${gameId}']`
-      );
+  console.log(`📢 Requested to join quiz room: game:${gameId}`);
 
-      // If card not found on first try, refresh the quiz list
-      if (!card && tries === 0 && typeof populateQuizList === "function") {
-        await populateQuizList();
-        card = document.querySelector(
-          `.quiz-card[data-id='${gameId}'], .quiz-card[data-quiz-id='${gameId}']`
-        );
-      }
+    try {
 
-      if (card) return resolve(card);
-      if (++tries >= maxRetries) return reject("Quiz card not found after retries");
-      setTimeout(check, 200);
-    };
-    check();
+// ==================================================
+// MASTER FETCHES QUIZ FROM SERVER
+// ==================================================
+if (isMaster) {
+
+  console.log("👑 MASTER fetching quiz:", gameId);
+  console.log("🌐 FETCH CALLED");
+  console.log("ROLE:", window.deviceRole);
+  console.log("GAME:", gameId);
+
+  const res = await fetch(`/api/quiz/${gameId}`);
+
+  if (!res.ok) throw new Error("Failed to fetch quiz");
+
+  const quizData = await res.json();
+
+  console.log("📡 SERVER RESPONSE RECEIVED (MASTER)", quizData);
+
+  localStorage.setItem(
+    "cachedQuiz",
+    JSON.stringify(quizData)
+  );
+
+  console.log("💾 Quiz cached locally (MASTER)");
+
+  // =============================================
+  // 🔐 GENERATE QUIZ VERSION HASH
+  // =============================================
+  const quizVersion = generateQuizHash(quizData);
+
+  console.log("🔐 MASTER QUIZ VERSION:", quizVersion);
+
+  // =============================================
+  // 📦 DISTRIBUTE QUIZ TO SLAVES
+  // =============================================
+  console.log("🚨 MASTER DISTRIBUTION PATH A - SENDING WITH VERSION");
+
+  socket.emit("master:quiz_data", {
+    gameId,
+    quizData,
+    quizVersion
   });
 
-  try {
-    const quizCard = await waitForCard(gameId);
+  console.log("📡 MASTER SENT QUIZ TO SLAVES");
+  console.log("Game ID:", gameId);
+  console.log("Quiz Version:", quizVersion);
 
-    // Highlight the active quiz card
-    document.querySelectorAll('.quiz-card').forEach(card => card.classList.remove('active'));
-    quizCard.classList.add("active");
+  if (typeof renderQuiz === "function") {
+    renderQuiz(quizData);
+  } else {
+    console.warn("⚠️ renderQuiz not defined (MASTER UI skip)");
+  }
 
-    // Load the quiz content
-    if (typeof loadQuizById === "function") await loadQuizById(gameId);
+}
 
-    // Auto-select card if the function exists
-    if (typeof autoSelectQuizCard === "function") autoSelectQuizCard(gameId);
+    // ==================================================
+    // SLAVES WAIT FOR MASTER DATA
+    // ==================================================
+    else {
 
-    // Fetch scheduled start and trigger countdown
-    const scheduled = await fetchScheduledStart(gameId);
-    if (scheduled && typeof startCountdownTimer === "function") startCountdownTimer(scheduled);
+      console.log("🛰️ SLAVE waiting for master quiz data...");
 
-    console.log("✅ Quiz UI updated for gameId:", gameId);
+    }
 
   } catch (err) {
-    console.warn("⚠️ Could not auto-select quiz card immediately:", err);
 
-    // Optionally refresh the quiz list and retry after short delay
-    if (typeof populateQuizList === "function") {
-      await populateQuizList();
-      setTimeout(() => {
-        if (typeof autoSelectQuizCard === "function") autoSelectQuizCard(gameId);
-      }, 500);
-    }
+    console.error("❌ Failed loading quiz:", err);
+
   }
+
+// ==================================================
+// UPDATE QUIZ UI / CARD IF AVAILABLE
+// ==================================================
+try {
+
+  // Try to find the quiz card currently in the DOM
+  let quizCard = document.querySelector(
+    `.quiz-card[data-id='${gameId}'],
+     .quiz-card[data-quiz-id='${gameId}'],
+     .quiz-card[data-game-id='${gameId}']`
+  );
+
+  // If the card does not exist yet, refresh the quiz list once
+  if (!quizCard && typeof populateQuizList === "function") {
+
+    console.log("🔄 Quiz card not found. Refreshing quiz list...");
+
+    await populateQuizList();
+
+    quizCard = document.querySelector(
+      `.quiz-card[data-id='${gameId}'],
+       .quiz-card[data-quiz-id='${gameId}'],
+       .quiz-card[data-game-id='${gameId}']`
+    );
+  }
+
+  // Update card UI only if the card exists
+  if (quizCard) {
+
+    console.log("✅ Quiz card found:", gameId);
+
+    document
+      .querySelectorAll(".quiz-card")
+      .forEach(card => card.classList.remove("active"));
+
+    quizCard.classList.add("active");
+
+    if (typeof autoSelectQuizCard === "function") {
+      autoSelectQuizCard(gameId);
+    }
+
+    console.log("✅ Quiz card selected:", gameId);
+
+  } else {
+
+    // IMPORTANT:
+    // Missing card should NOT prevent quiz activation
+    console.warn(
+      "⚠️ Quiz card not currently available in DOM.",
+      "Continuing activation using Game ID:",
+      gameId
+    );
+
+  }
+
+  // ==================================================
+  // COUNTDOWN
+  // ==================================================
+  const scheduled = await fetchScheduledStart(gameId);
+
+  if (
+    scheduled &&
+    typeof startCountdownTimer === "function"
+  ) {
+    startCountdownTimer(scheduled);
+  }
+
+  console.log(
+    "✅ Quiz activation workflow completed for gameId:",
+    gameId
+  );
+
+} catch (err) {
+
+  // UI/card errors should not block the quiz activation
+  console.warn(
+    "⚠️ Quiz UI update failed, but quiz activation can continue:",
+    err
+  );
+
+}
+});
+
+// =============================================
+// 🔐 GENERATE QUIZ DATA HASH
+// =============================================
+function generateQuizHash(quizData) {
+
+  const data = JSON.stringify(quizData);
+
+  let hash = 0;
+
+  for (let i = 0; i < data.length; i++) {
+    const char = data.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0;
+  }
+
+  return Math.abs(hash).toString(16);
+}
+
+// =============================================
+// 📦 RECEIVE QUIZ DATA FROM MASTER (SLAVE ONLY)
+// =============================================
+socket.on("master:quiz_data", async ({ gameId, quizData, quizVersion }) => {
+
+  // Prevent master from re-processing its own broadcast
+  if (window.deviceRole === "master") return;
+
+  console.log("📦 SLAVE RECEIVED FROM MASTER");
+  console.log("Game ID:", gameId);
+  console.log("Current Game ID:", localStorage.getItem("currentGameId"));
+  console.log("Quiz Data Available:", !!quizData);
+  console.log("Rounds Available:", quizData?.rounds?.length);
+  console.log("Payload size:", JSON.stringify(quizData).length);
+  console.log("🔐 Expected Quiz Version:", quizVersion);
+
+  // =============================================
+  // 💾 SAVE QUIZ LOCALLY
+  // =============================================
+  localStorage.setItem(
+    "cachedQuiz",
+    JSON.stringify(quizData)
+  );
+
+  console.log("💾 Quiz cached locally (SLAVE)");
+
+  // Cache locally
+  window.currentQuizData = quizData;
+
+  localStorage.setItem(
+    `quiz_${gameId}`,
+    JSON.stringify(quizData)
+  );
+
+
+   // =============================================
+  // 📺 GET SBC DEVICE ID
+ // =============================================
+  const deviceId = getDeviceId();
+
+  console.log(
+    "📺 DEVICE ID FOR QUIZ VALIDATION:",
+    deviceId
+  );
+
+// =============================================
+// 🔍 READ QUIZ BACK FROM LOCAL STORAGE
+// =============================================
+const storedQuizRaw = localStorage.getItem(`quiz_${gameId}`);
+
+if (!storedQuizRaw) {
+
+  console.error("❌ QUIZ VALIDATION FAILED");
+  console.error("❌ Quiz was not found after saving");
+
+  socket.emit("slave:quiz_ready", {
+    deviceId,
+    gameId,
+    status: "invalid",
+    reason: "quiz_not_stored"
+  });
+
+  return;
+}
+
+let storedQuiz;
+
+try {
+
+  storedQuiz = JSON.parse(storedQuizRaw);
+
+} catch (err) {
+
+  console.error("❌ QUIZ VALIDATION FAILED");
+  console.error("❌ Stored quiz JSON is corrupted");
+
+  socket.emit("slave:quiz_ready", {
+    deviceId,
+    gameId,
+    status: "invalid",
+    reason: "invalid_json"
+  });
+
+  return;
+}
+
+  // =============================================
+  // 🔐 GENERATE HASH OF STORED QUIZ
+  // =============================================
+  const storedQuizVersion = generateQuizHash(storedQuiz);
+
+  console.log("🔍 SLAVE STORED QUIZ VERSION:", storedQuizVersion);
+
+  // =============================================
+  // ⚠️ VALIDATION REQUIRES QUIZ VERSION
+  // =============================================
+  if (!quizVersion) {
+
+    console.warn("⚠️ QUIZ VALIDATION SKIPPED");
+    console.warn("Reason: Quiz package has no quizVersion");
+    console.warn("Game ID:", gameId);
+
+    return;
+  }
+
+  // =============================================
+  // ✅ COMPARE MASTER AND SLAVE VERSIONS
+  // =============================================
+  if (storedQuizVersion === quizVersion) {
+
+    console.log("=============================================");
+    console.log("✅ QUIZ VALIDATION PASSED");
+    console.log("Game ID:", gameId);
+    console.log("Quiz Version:", quizVersion);
+    console.log("=============================================");
+
+    // Render safely
+    if (typeof renderQuiz === "function") {
+      renderQuiz(quizData);
+    } else {
+      console.warn("⚠️ renderQuiz not defined on SLAVE");
+    }
+
+    // Validation response back to Master/Server
+    socket.emit("slave:quiz_ready", {
+      deviceId,
+      gameId,
+      status: "ok",
+      quizVersion
+    });
+
+  } else {
+
+    console.error("=============================================");
+    console.error("❌ QUIZ VALIDATION FAILED");
+    console.error("Game ID:", gameId);
+    console.error("Expected Version:", quizVersion);
+    console.error("Actual Version:", storedQuizVersion);
+    console.error("=============================================");
+
+    socket.emit("slave:quiz_ready", {
+      deviceId,
+      gameId,
+      status: "invalid",
+      quizVersion: storedQuizVersion,
+      expectedVersion: quizVersion,
+      reason: "version_mismatch"
+    });
+
+  }
+
 });
 
     // =============================================
@@ -424,8 +947,16 @@ socket.on("controller:selected_quiz", async ({ gameId }) => {
         window.currentGameId = data.id;
         localStorage.setItem("currentGameId", window.currentGameId);
 
-        socket.emit("join_game_room", window.currentGameId);
-        socket.emit("join_game_room", "global");
+        // socket.emit("join_game_room", window.currentGameId);
+        // socket.emit("join_game_room", "global");
+
+        socket.emit("joinRoom", {
+          gameId: window.currentGameId
+        });
+
+        console.log(
+          `📢 Requested to join updated quiz room: game:${window.currentGameId}`
+        );
 
         if (typeof loadQuizById === "function") {
           await loadQuizById(data.id);
@@ -570,7 +1101,114 @@ socket.on("quiz:start_now", ({ gameId }) => {
   }
 });
 
+socket.on("session-uploaded", (payload) => {
+
+    console.log("✅ Session upload confirmed");
+
+    localStorage.setItem(
+        "uploadedQuiz",
+        JSON.stringify({
+            gameId: payload.gameId,
+            uploadedAt: payload.uploadedAt
+        })
+    );
+
+    scheduleMidnightCleanup();
+
+    console.log("🕛 Cleanup scheduled");
+
+
 });
+});
+
+// =============================================
+// 🕛 TIME UNTIL MIDNIGHT
+// =============================================
+function millisecondsUntilMidnight() {
+
+    const now = new Date();
+
+    const midnight = new Date(now);
+
+    midnight.setHours(24, 0, 0, 0);
+
+    return midnight - now;
+
+}
+
+// =============================================
+// 🕛 SCHEDULE MIDNIGHT CLEANUP
+// =============================================
+function scheduleMidnightCleanup() {
+
+    const uploadedQuiz = localStorage.getItem("uploadedQuiz");
+    if (!uploadedQuiz) return;
+
+    const quiz = JSON.parse(uploadedQuiz);
+
+    const now = new Date();
+    const uploadDate = new Date(quiz.uploadedAt);
+
+    const cleanupTime = new Date(uploadDate);
+    cleanupTime.setHours(24, 0, 0, 0);
+
+    if (now >= cleanupTime) {
+        cleanupUploadedQuiz();
+        return;
+    }
+
+    const delay = cleanupTime - now;
+
+    console.log(
+        `🕛 Cleanup scheduled in ${Math.round(delay / 1000)} seconds`
+    );
+
+    setTimeout(cleanupUploadedQuiz, delay);
+}
+
+// =============================================
+// 🕛 SCHEDULE MIDNIGHT CLEANUP (TEST MODE) Client
+// =============================================
+// function scheduleMidnightCleanup() {
+
+//     const uploadedQuiz = localStorage.getItem("uploadedQuiz");
+//     if (!uploadedQuiz) return;
+
+//     console.log("🧪 TEST MODE: Client cleanup scheduled in 20 seconds");
+
+//     setTimeout(() => {
+//         cleanupUploadedQuiz();
+//     }, 20000);
+// }
+
+
+// =============================================
+// 🗑 DELETE LOCAL QUIZ
+// =============================================
+function cleanupUploadedQuiz() {
+
+    // console.log("🗑 Midnight reached");
+
+    console.log("Before cleanup:", localStorage.getItem("currentGameId"));
+
+    localStorage.removeItem("uploadedQuiz");
+    localStorage.removeItem("currentGameId");
+    localStorage.removeItem("cachedQuiz");
+
+    console.log("After cleanup:", localStorage.getItem("currentGameId"));
+
+    window.currentGameId = null;
+    window.currentQuiz = null;
+    quizActivated = false;
+
+    console.log("✅ uploadedQuiz removed");
+    console.log("✅ cachedQuiz removed");
+    console.log("✅ currentGameId removed");
+    console.log("📡 Returning to standby");
+
+    window.location.replace("/quizzes_tab.html?device=sbc");
+
+}
 
 // =============================================
 // 🔍 AUTO SELECT QUIZ CARD
@@ -955,6 +1593,10 @@ async function populateLeftPanel() {
     quizzes.forEach((quiz) => {
       const quizDiv = document.createElement("div");
       quizDiv.classList.add("quiz-card");
+
+      quizDiv.dataset.id = quiz.id;
+      quizDiv.dataset.gameId = quiz.id;
+
       quizDiv.dataset.id = quiz.game_id;
       quizDiv.dataset.quizId = quiz.game_id;
       quizDiv.style.cursor = "pointer";
@@ -1933,7 +2575,7 @@ window.addEventListener("load", () => {
 </script>
 
 <script src="http://192.168.1.77:8080/socket.io/socket.io.js"></script>
- <script src="build/static/js/main.1a73aee7.js"></script>
+ <script src="build/static/js/main.81c1e37d.js"></script>
  
 </body>
 </html>

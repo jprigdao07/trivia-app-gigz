@@ -562,19 +562,37 @@ function goToNextPage() {
 // ===============================
 // 🔹 REMOVE TEAM HANDLER
 // ===============================
-function removeTeam(teamId) {
+async function removeTeam(teamId) {
   const team = window.teams.find(t => t.id === teamId);
   if (!team) return;
 
-  // Remove team from array
-  window.teams = window.teams.filter(t => t.id !== teamId);
-  console.log("🗑️ Team removed:", team.name);
+  try {
+    // Delete team from database
+    const response = await fetch(`/api/teams/${teamId}`, {
+      method: "DELETE"
+    });
 
-  // Refresh Next button state
-  updateNextBtnState();
+    const result = await response.json();
 
-  // Optionally re-render teams in DOM
-  renderTeams();
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || "Failed to delete team");
+    }
+
+    // Remove team from frontend array
+    window.teams = window.teams.filter(t => t.id !== teamId);
+
+    console.log("🗑️ Team removed:", team.name);
+
+    // Refresh Next button state
+    updateNextBtnState();
+
+    // Re-render teams in DOM
+    renderTeams();
+
+  } catch (err) {
+    console.error("❌ Error removing team:", err);
+    alert(`Failed to remove team "${team.name}".`);
+  }
 }
 
 // === POPULATE QUIZ LIST IN CONTROLLER APP ===
@@ -681,6 +699,22 @@ async function handleQuizActivation(quizId) {
     window.currentGameId = gameIdFromServer;
     localStorage.setItem("currentGameId", window.currentGameId);
 
+
+    // =============================================
+   // UPDATE ACTIVE GAME ON CONTROLLER SERVER
+  // =============================================
+    await fetch("http://192.168.1.77:8080/api/set-active-game", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            gameId: gameIdFromServer
+        })
+    });
+
+    console.log("✅ Active game updated on Controller:", gameIdFromServer);
+
     // Highlight active quiz card
     document.querySelectorAll('.quiz-item').forEach(card => {
       if (card.dataset.id == quizId) {
@@ -721,16 +755,16 @@ async function handleQuizActivation(quizId) {
 // const socketBridge = io("http://localhost:8080");
 
 // 🎯 Listen for active quiz updates from bridge (use the same socket)
-if (typeof socket !== "undefined") {
-  socket.on("latest-game-id-updated", async ({ id }) => {
-    console.log("🎮 Active quiz updated from Controller:", id);
+// if (typeof socket !== "undefined") {
+//   socket.on("latest-game-id-updated", async ({ id }) => {
+//     console.log("🎮 Active quiz updated from Controller:", id);
 
-    if (id && window.currentGameId !== id) {
-      window.currentGameId = id;
-      await loadQuizById(id);
-    }
-  });
-}
+//     if (id && window.currentGameId !== id) {
+//       window.currentGameId = id;
+//       await loadQuizById(id);
+//     }
+//   });
+// }
 
 // === INIT ON PAGE LOAD ===
 document.addEventListener("DOMContentLoaded", async () => {
@@ -1088,13 +1122,11 @@ async function fetchCurrentGameId() {
     return data.id;
   } catch (err) {
     console.error("❌ Failed to fetch current game:", err);
-    alert("No active quiz. Please create/start a quiz first.");
+    // alert("No active quiz. Please create/start a quiz first.");
     return null;
   }
 }
-// ===============================
-// 🧾 LOAD TEAMS FOR THIS GAME
-// ===============================
+
 // ===============================
 // 🧾 LOAD TEAMS FOR THIS GAME
 // ===============================
@@ -1529,6 +1561,7 @@ function enableDragging(card) {
   let offsetY = 0;
   let dragging = false;
   let moved = false;
+  let clickedDeleteButton = false;
 
   const startDrag = (clientX, clientY) => {
     dragging = true;
@@ -1547,7 +1580,11 @@ function enableDragging(card) {
     const newLeft = clientX - offsetX;
     const newTop = clientY - offsetY;
 
-    if (!moved && (Math.abs(newLeft - card.offsetLeft) > 3 || Math.abs(newTop - card.offsetTop) > 3)) {
+    if (
+      !moved &&
+      (Math.abs(newLeft - card.offsetLeft) > 3 ||
+       Math.abs(newTop - card.offsetTop) > 3)
+    ) {
       moved = true;
     }
 
@@ -1557,8 +1594,8 @@ function enableDragging(card) {
 
   const endDrag = () => {
     if (!dragging) return;
-    dragging = false;
 
+    dragging = false;
     card.classList.remove("dragging");
 
     const teamId = parseInt(card.dataset.teamId);
@@ -1569,13 +1606,30 @@ function enableDragging(card) {
       team.y = card.style.top;
     }
 
-    if (!moved) {
-      card.dispatchEvent(new CustomEvent("cardclick", { bubbles: true }));
+    // ✅ Only trigger card click if:
+    // - user didn't drag
+    // - click did NOT originate from Delete button
+    if (!moved && !clickedDeleteButton) {
+      card.dispatchEvent(
+        new CustomEvent("cardclick", { bubbles: true })
+      );
     }
+
+    // Reset for next interaction
+    clickedDeleteButton = false;
   };
 
-  // 🖱️ Mouse events
+  // ===============================
+  // 🖱️ Mouse Events
+  // ===============================
   card.addEventListener("mousedown", (e) => {
+
+    // Remember if click started on Delete button
+    clickedDeleteButton = !!e.target.closest(".remove-team-btn");
+
+    // Don't start dragging from Delete button
+    if (clickedDeleteButton) return;
+
     startDrag(e.clientX, e.clientY);
   });
 
@@ -1585,16 +1639,27 @@ function enableDragging(card) {
 
   document.addEventListener("mouseup", endDrag);
 
-  // 📱 Touch events
+  // ===============================
+  // 📱 Touch Events
+  // ===============================
   card.addEventListener("touchstart", (e) => {
+
+    clickedDeleteButton = !!e.target.closest(".remove-team-btn");
+
+    // Don't start dragging from Delete button
+    if (clickedDeleteButton) return;
+
     const touch = e.touches[0];
     startDrag(touch.clientX, touch.clientY);
+
   }, { passive: false });
 
   document.addEventListener("touchmove", (e) => {
     if (!dragging) return;
+
     const touch = e.touches[0];
     moveDrag(touch.clientX, touch.clientY);
+
   }, { passive: false });
 
   document.addEventListener("touchend", endDrag);
@@ -1677,7 +1742,9 @@ teamList.addEventListener("click", async (e) => {
 
   if (e.target.classList.contains("remove-team-btn")) {
     if (!confirm(`Remove team "${team.name}"?`)) return;
-    markTeamLeft(team);
+
+    await removeTeam(teamId);
+    return;
   }
 });
 }
@@ -2154,8 +2221,18 @@ startBtn.addEventListener("click", async () => {
       bindControlButtons(window.socket);
       console.log("✅ Buttons are now fully active for the new quiz!");
 
-        // 🟢 SWITCH TO SCOREBOARD
-      showSection("scoreboard");
+    // Step 7: Switch to scoreboard
+    console.log("📊 Switching to scoreboard...");
+
+    window.location.hash = "scoreboard";
+
+    // Give the browser a moment to process the hash
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Step 8: Reload the page
+    console.log("🔄 Reloading page to initialize scoreboard...");
+
+    window.location.reload();
     }
 
   } catch (err) {

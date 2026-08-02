@@ -23,7 +23,7 @@
     <!-- <a href="setupwifi.html" class="nav-item"><i>📶</i> <b>Setup Wi-Fi</b></a> -->
 
     <div class="navbar-links" id="navbarLinks">
-      <a href="http://192.168.1.77:8080/gigz.html#dashboard" class="nav-item" id="dashboardLink"><i>🏠</i> Dashboard</a>
+      <a href="http://192.168.1.77:8080/gigz.html#dashboard" class="nav-item"><i>🏠</i> Dashboard</a>
       <!-- <a href="#" class="nav-item" data-target="rounds"><i>🎯</i>Navigation</a>
       <a href="#" class="nav-item" data-target="scoreboard"><i>🏆</i> Scoreboard</a>
       <a href="#" class="nav-item" data-target="settings"><i>⚙️</i> Settings</a> -->
@@ -89,19 +89,6 @@ if (goBtn) {
     window.location.href = "http://192.168.1.77:8080/gigz.html#rounds";
   });
 }
-
-
-const dashboardBtn = document.getElementById("dashboardLink");
-
-if (dashboardBtn) {
-  dashboardBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-
-    window.location.href =
-      "http://192.168.1.77:8080/gigz.html#dashboard";
-  });
-}
-
 </script>
 
 

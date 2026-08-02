@@ -3416,6 +3416,59 @@ app.get("/api/quiz/:quizId/teams", async (req, res) => {
   res.json({ teams });
 });
 
+// =====================================================
+// 📦 Upload Session Endpoint
+// =====================================================
+app.post("/api/upload-session", async (req, res) => {
+
+  try {
+
+    const session = req.body;
+
+    console.log("📦 Session upload received");
+    console.log(session);
+
+    await db.execute(
+      `
+      INSERT INTO sessions
+      (
+        game_id,
+        master_device,
+        completed_at,
+        uploaded_at,
+        session_data
+      )
+      VALUES (?, ?, ?, ?, ?)
+      `,
+      [
+        session.gameId ?? null,
+        session.master ?? null,
+        session.completedAt ?? null,
+        session.uploadedAt ?? null,
+        JSON.stringify(session ?? {})
+      ]
+    );
+
+    console.log("✅ Session saved to database.");
+
+    res.json({
+      success: true,
+      message: "Session uploaded successfully."
+    });
+
+  } catch (err) {
+
+    console.error("❌ Session upload failed:", err);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to upload session."
+    });
+
+  }
+
+});
+
 //IO  CONNECTION
 io.on("connection", (socket) => {
   console.log(`🟢 Client connected: ${socket.id}`);

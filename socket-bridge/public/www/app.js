@@ -51,7 +51,7 @@ async function waitForDevice(url, retries = 25, delay = 2000) {
 // ✅ Redirect to quiz page (#rounds section)
 async function redirectToQuiz() {
   const base = "http://192.168.1.77:8080";
-  const fullUrl = base + "/index.html#rounds";
+  const fullUrl = base + "/gigz.html#rounds";
 
   updateLoading("Waiting for device to come online...");
 

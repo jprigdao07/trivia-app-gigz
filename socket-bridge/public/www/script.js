@@ -681,6 +681,22 @@ async function handleQuizActivation(quizId) {
     window.currentGameId = gameIdFromServer;
     localStorage.setItem("currentGameId", window.currentGameId);
 
+
+    // =============================================
+   // UPDATE ACTIVE GAME ON CONTROLLER SERVER
+  // =============================================
+    await fetch("http://192.168.1.77:8080/api/set-active-game", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            gameId: gameIdFromServer
+        })
+    });
+
+    console.log("✅ Active game updated on Controller:", gameIdFromServer);
+
     // Highlight active quiz card
     document.querySelectorAll('.quiz-item').forEach(card => {
       if (card.dataset.id == quizId) {
@@ -721,16 +737,16 @@ async function handleQuizActivation(quizId) {
 // const socketBridge = io("http://localhost:8080");
 
 // 🎯 Listen for active quiz updates from bridge (use the same socket)
-if (typeof socket !== "undefined") {
-  socket.on("latest-game-id-updated", async ({ id }) => {
-    console.log("🎮 Active quiz updated from Controller:", id);
+// if (typeof socket !== "undefined") {
+//   socket.on("latest-game-id-updated", async ({ id }) => {
+//     console.log("🎮 Active quiz updated from Controller:", id);
 
-    if (id && window.currentGameId !== id) {
-      window.currentGameId = id;
-      await loadQuizById(id);
-    }
-  });
-}
+//     if (id && window.currentGameId !== id) {
+//       window.currentGameId = id;
+//       await loadQuizById(id);
+//     }
+//   });
+// }
 
 // === INIT ON PAGE LOAD ===
 document.addEventListener("DOMContentLoaded", async () => {
@@ -1088,7 +1104,7 @@ async function fetchCurrentGameId() {
     return data.id;
   } catch (err) {
     console.error("❌ Failed to fetch current game:", err);
-    alert("No active quiz. Please create/start a quiz first.");
+    // alert("No active quiz. Please create/start a quiz first.");
     return null;
   }
 }
@@ -2155,6 +2171,21 @@ startBtn.addEventListener("click", async () => {
       console.log("✅ Buttons are now fully active for the new quiz!");
 
         // 🟢 SWITCH TO SCOREBOARD
+      // showSection("scoreboard");
+      // 🟢 SWITCH TO SCOREBOARD
+      console.log("🧹 Clearing previous scoreboard teams...");
+
+      // Clear the previous teams from memory
+      teams.length = 0;
+
+      // Re-render the team list
+      // This will display "No teams yet."
+      renderTeams();
+
+      // Switch to scoreboard
+      console.log("📊 Switching to scoreboard...");
+
+      window.location.hash = "scoreboard";
       showSection("scoreboard");
     }
 
