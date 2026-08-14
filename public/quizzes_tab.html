@@ -1249,55 +1249,55 @@ function millisecondsUntilMidnight() {
 // =============================================
 // 🕛 SCHEDULE MIDNIGHT CLEANUP
 // =============================================
-// function scheduleMidnightCleanup() {
+function scheduleMidnightCleanup() {
 
-//     const uploadedQuiz = localStorage.getItem("uploadedQuiz");
-//     if (!uploadedQuiz) return;
+    const uploadedQuiz = localStorage.getItem("uploadedQuiz");
+    if (!uploadedQuiz) return;
 
-//     const quiz = JSON.parse(uploadedQuiz);
+    const quiz = JSON.parse(uploadedQuiz);
 
-//     const now = new Date();
-//     const uploadDate = new Date(quiz.uploadedAt);
+    const now = new Date();
+    const uploadDate = new Date(quiz.uploadedAt);
 
-//     const cleanupTime = new Date(uploadDate);
-//     cleanupTime.setHours(24, 0, 0, 0);
+    const cleanupTime = new Date(uploadDate);
+    cleanupTime.setHours(24, 0, 0, 0);
 
-//     if (now >= cleanupTime) {
-//         cleanupUploadedQuiz();
-//         return;
-//     }
+    if (now >= cleanupTime) {
+        cleanupUploadedQuiz();
+        return;
+    }
 
-//     const delay = cleanupTime - now;
+    const delay = cleanupTime - now;
 
-//     console.log(
-//         `🕛 Cleanup scheduled in ${Math.round(delay / 1000)} seconds`
-//     );
+    console.log(
+        `🕛 Cleanup scheduled in ${Math.round(delay / 1000)} seconds`
+    );
 
-//     setTimeout(cleanupUploadedQuiz, delay);
-// }
+    setTimeout(cleanupUploadedQuiz, delay);
+}
 
 // =============================================
 // 🕛 SCHEDULE MIDNIGHT CLEANUP (TEST MODE)
 // =============================================
-function scheduleMidnightCleanup() {
+// function scheduleMidnightCleanup() {
 
-    const uploadedQuiz = localStorage.getItem("uploadedQuiz");
+//     const uploadedQuiz = localStorage.getItem("uploadedQuiz");
 
-    if (!uploadedQuiz) {
-        console.log("⚠️ No uploadedQuiz found. Cleanup not scheduled.");
-        return;
-    }
+//     if (!uploadedQuiz) {
+//         console.log("⚠️ No uploadedQuiz found. Cleanup not scheduled.");
+//         return;
+//     }
 
-    console.log("🧪 TEST MODE: Client cleanup scheduled in 30 seconds");
+//     console.log("🧪 TEST MODE: Client cleanup scheduled in 30 seconds");
 
-    setTimeout(() => {
+//     setTimeout(() => {
 
-        console.log("⏰ CLIENT CLEANUP TIMER FIRED");
+//         console.log("⏰ CLIENT CLEANUP TIMER FIRED");
 
-        cleanupUploadedQuiz();
+//         cleanupUploadedQuiz();
 
-    }, 30000);
-}
+//     }, 30000);
+// }
 // =============================================
 // 🗑 DELETE LOCAL QUIZ
 // =============================================

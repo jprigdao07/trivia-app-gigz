@@ -112,64 +112,64 @@ let latestGameCleanupTimer = null;
 // =============================================
 // 🕛 SCHEDULE SERVER MIDNIGHT CLEANUP
 // =============================================
-// function scheduleLatestGameCleanup() {
+function scheduleLatestGameCleanup() {
 
-//   // Cancel previous timer if there is one
-//   if (latestGameCleanupTimer) {
-//     clearTimeout(latestGameCleanupTimer);
-//   }
+  // Cancel previous timer if there is one
+  if (latestGameCleanupTimer) {
+    clearTimeout(latestGameCleanupTimer);
+  }
 
-//   const now = new Date();
+  const now = new Date();
 
-//   const midnight = new Date(now);
-//   midnight.setHours(24, 0, 0, 0);
+  const midnight = new Date(now);
+  midnight.setHours(24, 0, 0, 0);
 
-//   const delay = midnight - now;
+  const delay = midnight - now;
 
-//   console.log(
-//     `🕛 Server cleanup scheduled in ${Math.round(delay / 1000)} seconds`
-//   );
+  console.log(
+    `🕛 Server cleanup scheduled in ${Math.round(delay / 1000)} seconds`
+  );
 
-//   latestGameCleanupTimer = setTimeout(() => {
+  latestGameCleanupTimer = setTimeout(() => {
 
-//     console.log("🗑 Midnight reached");
+    console.log("🗑 Midnight reached");
 
-//     latestGameId = null;
+    latestGameId = null;
 
-//     console.log("✅ latestGameId cleared");
+    console.log("✅ latestGameId cleared");
 
-//     io.emit("latest-game-id-updated", {
-//       id: null
-//     });
+    io.emit("latest-game-id-updated", {
+      id: null
+    });
 
-//   }, delay);
+  }, delay);
 
-// }
+}
 
 // =============================================
 // 🕛 SCHEDULE SERVER CLEANUP (TEST MODE) Server
 // =============================================
-function scheduleLatestGameCleanup() {
+// function scheduleLatestGameCleanup() {
 
-    if (latestGameCleanupTimer) {
-        clearTimeout(latestGameCleanupTimer);
-    }
+//     if (latestGameCleanupTimer) {
+//         clearTimeout(latestGameCleanupTimer);
+//     }
 
-    console.log("🧪 TEST MODE: Server cleanup scheduled in 20 seconds");
+//     console.log("🧪 TEST MODE: Server cleanup scheduled in 20 seconds");
 
-    latestGameCleanupTimer = setTimeout(() => {
+//     latestGameCleanupTimer = setTimeout(() => {
 
-        console.log("🗑 TEST MODE: Server cleanup");
+//         console.log("🗑 TEST MODE: Server cleanup");
 
-        latestGameId = null;
+//         latestGameId = null;
 
-        console.log("✅ latestGameId cleared");
+//         console.log("✅ latestGameId cleared");
 
-        // Don't broadcast null during testing.
-        // io.emit("latest-game-id-updated", { id: null });
+//         // Don't broadcast null during testing.
+//         // io.emit("latest-game-id-updated", { id: null });
 
-    }, 30000);
-}
+//     }, 30000);
+// }
 
 // ✅ API to set the latest active game ID
 app.post('/api/set-latest-game-id', express.json(), (req, res) => {
