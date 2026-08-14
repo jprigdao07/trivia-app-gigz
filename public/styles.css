@@ -1676,3 +1676,12 @@ Quizzes Tab Styles */
   border: none;
 }
 
+.reactivate-btn {
+  padding: 6px 12px;
+  cursor: pointer;
+  border: 1px solid #aaa;
+  background: #0a0a0a;
+  color: #fff;
+  
+}
+

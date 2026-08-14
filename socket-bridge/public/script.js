@@ -617,25 +617,44 @@ async function populateQuizList() {
       const title = q.location || q.title || `Quiz #${q.game_id || 'N/A'}`;
       const createdAt = q.created_at ? new Date(q.created_at).toLocaleString() : 'Unknown';
       const status = q.status || 'Inactive';
+      const normalizedStatus = status.toLowerCase();
+
+      const isFinished = normalizedStatus === 'finished';
+      const isActive = normalizedStatus === 'active';
 
       const div = document.createElement('div');
       div.className = 'quiz-item';
       div.dataset.id = q.game_id;
+
       div.style = `
         border: 1px solid #555;
         padding: 10px;
         margin-bottom: 8px;
-        cursor: pointer;
+        cursor: ${isFinished ? 'not-allowed' : 'pointer'};
         border-radius: 6px;
         background: linear-gradient(90deg, #6a1b9a, #8e24aa);
         color: #fff;
         transition: background 0.2s;
-        opacity: ${status.toLowerCase() === 'active' ? 1 : 0.5};
+        opacity: ${isActive ? 1 : 0.5};
       `;
 
-      div.innerHTML = `<strong>📍 ${title}</strong><br><small>Created: ${createdAt} | Status: ${status}</small>`;
+      div.innerHTML = `
+        <strong>📍 ${title}</strong><br>
+        <small>Created: ${createdAt} | Status: ${isFinished ? 'Finished' : status}</small>
+      `;
 
       div.addEventListener('click', async () => {
+
+        if (isFinished) {
+          console.log(`🛑 Quiz ${q.game_id} is finished and cannot be reused automatically.`);
+
+          alert(
+            "This quiz has already been completed and is currently unavailable for reuse."
+          );
+
+          return;
+        }
+        
         const quizId = q.game_id;
         if (!quizId) return alert("Invalid quiz selected.");
         console.log("🎮 Activating quiz:", quizId);

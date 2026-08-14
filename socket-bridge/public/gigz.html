@@ -123,6 +123,7 @@ if (localStorage.getItem("loginStarted") !== "true") {
 <section id="scoreboard" class="page">
   <!-- <h1>👥 Team Management & Scoreboard</h1> -->
   <div class="teams-header">
+    <div class="upload-msg" id="upload-msg"></div>
     <button id="addTeamBtn">➕ Add Team</button>
     <p id="showFinalScoresBtn" class="primbutton"></p>
   </div>
@@ -228,23 +229,136 @@ if (localStorage.getItem("loginStarted") !== "true") {
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const connectBtn = document.getElementById("connectBtn");
-  const roundsSection = document.getElementById("rounds");
 
-  connectBtn.addEventListener("click", async () => {
-    const socket = io("http://192.168.1.77:8080", { auth: { role: "controller" } });
+    const connectBtn = document.getElementById("connectBtn");
+    const roundsSection = document.getElementById("rounds");
+
+    // =============================================
+    // 🔌 CONNECT TO CONTROLLER SERVER
+    // =============================================
+
+    const socket = io("http://192.168.1.77:8080", {
+        transports: ["websocket"],
+        auth: {
+            role: "controller"
+        }
+    });
+
+    // =============================================
+    // 📡 DEBUG ALL RECEIVED EVENTS
+    // =============================================
+
+    socket.onAny((event, ...args) => {
+        console.log("📡 EVENT RECEIVED:", event, args);
+    });
+
+    // =============================================
+    // 🔗 SOCKET CONNECTED
+    // =============================================
 
     socket.on("connect", () => {
-      console.log("✅ Connected to server as controller:", socket.id);
-      connectBtn.disabled = true;
-      connectBtn.textContent = "Connected";
 
-      // Show rounds section and scroll
-      document.querySelectorAll(".page").forEach(p => p.style.display = "none");
-      roundsSection.style.display = "block";
-      roundsSection.scrollIntoView({ behavior: "smooth" });
+        console.log("========================================");
+        console.log("🎮 CONTROLLER SOCKET CONNECTED");
+        console.log("Socket ID:", socket.id);
+        console.log("Auth:", socket.auth);
+        console.log("Connected:", socket.connected);
+        console.log("========================================");
+
+        socket.emit("ping-test");
     });
-  });
+
+    // =============================================
+    // 📦 SESSION UPLOAD SUCCESS
+    // =============================================
+
+    socket.on("session-upload-success", (data) => {
+
+        console.log("🎉 SESSION UPLOAD EVENT RECEIVED!", data);
+
+        const uploaded =
+            new Date(data.uploadedAt).toLocaleString("en-PH", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: true
+            });
+
+        showUploadMessage(
+`✅ Quiz Package Uploaded Successfully
+
+Game ID:
+${data.gameId}
+
+Uploaded:
+${uploaded}`
+        );
+    });
+
+    // =============================================
+    // ❌ SESSION UPLOAD FAILED
+    // =============================================
+
+    socket.on("session-upload-failed", (data) => {
+
+        console.log("❌ Upload failed:", data);
+
+        showUploadMessage(
+`❌ Quiz Package Upload Failed
+
+Game ID:
+${data.gameId || "Unknown"}`,
+            false
+        );
+    });
+
+    // =============================================
+    // ❌ SOCKET DISCONNECTED
+    // =============================================
+
+    socket.on("disconnect", (reason) => {
+        console.log("❌ GIGZ DISCONNECTED:", reason);
+    });
+
+    // =============================================
+    // ❌ SOCKET CONNECTION ERROR
+    // =============================================
+
+    socket.on("connect_error", (err) => {
+        console.log("❌ CONNECT ERROR:", err.message);
+    });
+
+    // =============================================
+    // 🟢 CONNECT BUTTON
+    // =============================================
+
+    connectBtn.addEventListener("click", async () => {
+
+        if (!socket.connected) {
+            console.log("⚠️ Controller socket is not connected.");
+            return;
+        }
+
+        console.log("🎛️ Controller button clicked");
+
+        connectBtn.disabled = true;
+        connectBtn.textContent = "Connected";
+
+        document.querySelectorAll(".page").forEach(p => {
+            p.style.display = "none";
+        });
+
+        roundsSection.style.display = "block";
+
+        roundsSection.scrollIntoView({
+            behavior: "smooth"
+        });
+    });
+
 });
 </script>
 
@@ -517,6 +631,65 @@ function renderDevices(devices) {
 
 // Start dashboard
 connectDashboard(0);
-  </script>
+</script>
+
+<script>
+  // =============================================
+// 📦 Upload Confirmation
+// =============================================
+function showUploadMessage(message, success = true) {
+
+  console.log("📢 showUploadMessage() called");
+
+  const box = document.getElementById("upload-msg");
+
+  console.log("upload-msg element:", box);
+
+  if (!box) return;
+
+  box.style.display = "block";
+  box.style.padding = "14px 18px";
+  box.style.marginBottom = "12px";
+  box.style.borderRadius = "10px";
+  box.style.fontWeight = "600";
+  box.style.fontSize = "14px";
+  box.style.lineHeight = "1.5";
+  box.style.whiteSpace = "pre-line";
+
+  // Controller App theme
+  box.style.background = "linear-gradient(135deg, var(--secondary), var(--accent))";
+
+  // Dark text works better with the bright gradient
+  box.style.color = "#111827";
+
+  box.style.border = "none";
+
+  box.style.boxShadow =
+      "0 4px 14px rgba(0, 122, 223, 0.25)";
+
+  box.style.transition =
+      "opacity 0.25s ease, transform 0.25s ease";
+
+  box.style.opacity = "1";
+  box.style.transform = "translateY(0)";
+
+  box.textContent = message;
+
+  clearTimeout(box._timer);
+
+  box._timer = setTimeout(() => {
+
+    box.style.opacity = "0";
+    box.style.transform = "translateY(-4px)";
+
+    setTimeout(() => {
+      box.style.display = "none";
+      box.textContent = "";
+    }, 250);
+
+  }, 7000);
+}
+</script>
+
 </body>
 </html>

@@ -1,16 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="styles.css" />
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <title>Setup Wi-Fi</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <title>Gigz</title>
+
+<script>
+if (localStorage.getItem("loginStarted") !== "true") {
+  window.location.href = "login.html";
+}
+</script>
+
 
 </head>
 <body>
 
-    <!-- Main -->
+
+<!-- Main -->
 <div class="main">
 
   <!-- Sidebar -->
@@ -20,95 +28,668 @@
       <button class="menu-toggle" id="menuToggle">☰</button>
     </div>
 
-    <!-- <a href="setupwifi.html" class="nav-item"><i>📶</i> <b>Setup Wi-Fi</b></a> -->
+    <a href="setupwifi.html" class="nav-item"><i>📶</i> <b>Setup Wi-Fi</b></a>
 
     <div class="navbar-links" id="navbarLinks">
-      <a href="http://192.168.1.77:8080/gigz.html#dashboard" class="nav-item" id="dashboardLink"><i>🏠</i> Dashboard</a>
-      <!-- <a href="#" class="nav-item" data-target="rounds"><i>🎯</i>Navigation</a>
+      <a href="#" class="nav-item" data-target="dashboard"><i>🏠</i> Dashboard</a>
+      <a href="#" class="nav-item" data-target="rounds"><i>🎯</i>Navigation</a>
       <a href="#" class="nav-item" data-target="scoreboard"><i>🏆</i> Scoreboard</a>
-      <a href="#" class="nav-item" data-target="settings"><i>⚙️</i> Settings</a> -->
+      <a href="#" class="nav-item" data-target="settings"><i>⚙️</i> Settings</a>
       
     </div>
   </nav>
+  
+<div class="content">
+ <section id="dashboard" class="page active">
+  <div class="dash-div">
+    <!-- <h1>🎮 Gigz Dashboard</h1>
+    <p>Welcome back, Host! Here’s an overview of your quiz activities.</p> -->
 
-<div id="provisioning" class="provisioning" style="display: none;">
+        <!-- Device cards -->
+    <div id="deviceContainer" style="width: 100%;"></div>
 
-     <h1>Wi-Fi Provisioning</h1>
-
-    <div class="ssid-wrapper">
-        <input type="text" id="ssid" placeholder="Wi-Fi SSID" required/>
+    <!-- === STATS OVERVIEW === -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h2>5</h2>
+        <p>Active Quizzes</p>
+      </div>
+      <div class="stat-card">
+        <h2>12</h2>
+        <p>Total Teams</p>
+      </div>
+      <div class="stat-card">
+        <h2>3</h2>
+        <p>Live Locations</p>
+      </div>
+      <div class="stat-card">
+        <h2>128</h2>
+        <p>Total Players</p>
+      </div>
     </div>
 
-    <div class="password-wrapper">
-        <input type="password" id="password" placeholder="Wi-Fi Password" required />
-        <span id="togglePassword" class="eye-btn">👁️</span>
+    <!-- === RECENT QUIZZES === -->
+    <div class="recent-quizzes">
+      <h2>🧩 Recent Quizzes</h2>
+      <table class="quiz-table">
+        <thead>
+          <tr>
+            <th>Quiz Name</th>
+            <th>Location</th>
+            <th>Status</th>
+            <th>Players</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>General Trivia Night</td>
+            <td>Downtown Pub</td>
+            <td><span class="badge live">Live</span></td>
+            <td>24</td>
+            <td><button class="btn-start">View</button></td>
+          </tr>
+          <tr>
+            <td>Science Challenge</td>
+            <td>City Library</td>
+            <td><span class="badge scheduled">Scheduled</span></td>
+            <td>18</td>
+            <td><button class="btn-start">Start</button></td>
+          </tr>
+          <tr>
+            <td>Music Mania</td>
+            <td>Campus Hall</td>
+            <td><span class="badge ended">Ended</span></td>
+            <td>30</td>
+            <td><button class="btn-start">Review</button></td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
-  <button id="provisionBtn">Connect</button>
+    <!-- === QUICK ACTIONS === -->
+    <div class="quick-actions">
+      <h2>⚡ Quick Actions</h2>
+      <div class="actions-grid">
+        <button class="btn-primary">➕ Create New Quiz</button>
+        <button class="btn-secondary">📅 Schedule Quiz</button>
+        <button class="btn-tertiary">👥 Manage Teams</button>
+        <button class="btn-outline">📊 View Reports</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="scoreboard" class="page">
+  <!-- <h1>👥 Team Management & Scoreboard</h1> -->
+  <div class="teams-header">
+    <div class="upload-msg" id="upload-msg"></div>
+    <button id="addTeamBtn">➕ Add Team</button>
+    <p id="showFinalScoresBtn" class="primbutton"></p>
+  </div>
+  
+    <div class="team-card-div">
+    <div id="teamList" class="team-list">
+    <!-- Team cards will populate here -->
+     </div>
+  </div>
+
+  <!-- Add Team Modal -->
+  <div id="addTeamModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Add New Team</h2>
+
+      <label for="newTeamName">Team Name</label>
+      <input type="text" id="newTeamName" placeholder="Enter team name">
+
+      <!-- <label for="teamLocation">Location</label>
+      <input type="text" id="teamLocation" placeholder="Enter location (e.g., Cebu City)">
+ -->
+      <div class="modal-actions">
+        <button id="saveTeamBtn">Save</button>
+        <button id="cancelTeamBtn" class="cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="scoringModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2 id="scoringTeamName"></h2>
+    <div id="questionsList"></div>
+    <!-- <button id="saveScoresBtn">Save Scores</button> -->
+  </div>
 </div>
-
-<div id="status"></div>
-
-<!-- Add this button somewhere -->
-<button id="openProvisioningBtn" class="wifiBtn">Setup Wi-Fi</button>
-
-<button id="goToQuizBtn" class="quizBtn" style="display:none;">
-  Go to Quiz
+<div class="session-info">
+<button
+  id="nextBtn" class="nextBtn" style="width: 40%; margin-bottom: 10px; padding: 30px; border-radius: 40px;"
+>
+  Next
 </button>
+    </div>
+</section>
+
+    <!-- Rounds Control -->
+<section id="rounds" class="page">
+
+  <div class="round-div" style="display: flex; flex-direction: column; align-items: center;">
+
+    <!-- Quiz controls -->
+    <div id="quiz-div" class="session-info">
+
+      <h3>Game ID:</h3>
+
+      <input
+        type="text"
+        id="gameIdInput"
+        placeholder="Enter Game ID"
+        style="padding:10px; width:100%; margin-bottom:10px;"
+      />
+
+      <h3>SCHEDULE</h3>
+
+      <div
+        id="quizList"
+        class="left-panel"
+        style="
+          width:100%;
+          margin-top:10px;
+          margin-bottom:10px;
+          border:1px solid #ccc;
+          border-radius:20px;
+          padding:10px;
+          max-height:200px;
+          overflow-y:auto;
+        "
+      >
+      </div>
+
+      <button
+        id="startQuizBtn"
+        class="btn-ready"
+        style="width:100%; padding:30px; color:white;"
+      >
+        Start Quiz
+      </button>
+
+    </div>
+
+  </div>
+
+</section>
+
+    <!-- Settings -->
+    <section id="settings" class="page">
+      <h1>⚙️ Settings</h1>
+      <p>Settings panel under development.</p>
+    </section>
+  </div>
 </div>
 
-  <script>
-    const togglePassword = document.getElementById("togglePassword");
-    const passwordInput = document.getElementById("password");
+<script>
+document.addEventListener("DOMContentLoaded", () => {
 
-    togglePassword.addEventListener("click", () => {
-      const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
-      passwordInput.setAttribute("type", type);
+    const connectBtn = document.getElementById("connectBtn");
+    const roundsSection = document.getElementById("rounds");
 
-      // Optional: change icon
-      togglePassword.textContent = type === "password" ? "👁️" : "🙈";
+    // =============================================
+    // 🔌 CONNECT TO CONTROLLER SERVER
+    // =============================================
+
+    const socket = io("http://192.168.1.77:8080", {
+        transports: ["websocket"],
+        auth: {
+            role: "controller"
+        }
     });
 
-    document.addEventListener("DOMContentLoaded", () => {
-      const btn = document.getElementById("openProvisioningBtn");
-      const panel = document.getElementById("provisioning");
+    // =============================================
+    // 📡 DEBUG ALL RECEIVED EVENTS
+    // =============================================
 
-  if (btn && panel) {
-    btn.addEventListener("click", () => {
-      panel.style.display = "flex";
-      btn.style.display = "none"; // optional
+    socket.onAny((event, ...args) => {
+        console.log("📡 EVENT RECEIVED:", event, args);
     });
-  } else {
-    console.error("Missing elements:", { btn, panel });
-  }
+
+    // =============================================
+    // 🔗 SOCKET CONNECTED
+    // =============================================
+
+    socket.on("connect", () => {
+
+        console.log("========================================");
+        console.log("🎮 CONTROLLER SOCKET CONNECTED");
+        console.log("Socket ID:", socket.id);
+        console.log("Auth:", socket.auth);
+        console.log("Connected:", socket.connected);
+        console.log("========================================");
+
+        socket.emit("ping-test");
+    });
+
+    // =============================================
+    // 📦 SESSION UPLOAD SUCCESS
+    // =============================================
+
+    socket.on("session-upload-success", (data) => {
+
+        console.log("🎉 SESSION UPLOAD EVENT RECEIVED!", data);
+
+        const uploaded =
+            new Date(data.uploadedAt).toLocaleString("en-PH", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: true
+            });
+
+        showUploadMessage(
+`✅ Quiz Package Uploaded Successfully
+
+Game ID:
+${data.gameId}
+
+Uploaded:
+${uploaded}`
+        );
+    });
+
+    // =============================================
+    // ❌ SESSION UPLOAD FAILED
+    // =============================================
+
+    socket.on("session-upload-failed", (data) => {
+
+        console.log("❌ Upload failed:", data);
+
+        showUploadMessage(
+`❌ Quiz Package Upload Failed
+
+Game ID:
+${data.gameId || "Unknown"}`,
+            false
+        );
+    });
+
+    // =============================================
+    // ❌ SOCKET DISCONNECTED
+    // =============================================
+
+    socket.on("disconnect", (reason) => {
+        console.log("❌ GIGZ DISCONNECTED:", reason);
+    });
+
+    // =============================================
+    // ❌ SOCKET CONNECTION ERROR
+    // =============================================
+
+    socket.on("connect_error", (err) => {
+        console.log("❌ CONNECT ERROR:", err.message);
+    });
+
+    // =============================================
+    // 🟢 CONNECT BUTTON
+    // =============================================
+
+    connectBtn.addEventListener("click", async () => {
+
+        if (!socket.connected) {
+            console.log("⚠️ Controller socket is not connected.");
+            return;
+        }
+
+        console.log("🎛️ Controller button clicked");
+
+        connectBtn.disabled = true;
+        connectBtn.textContent = "Connected";
+
+        document.querySelectorAll(".page").forEach(p => {
+            p.style.display = "none";
+        });
+
+        roundsSection.style.display = "block";
+
+        roundsSection.scrollIntoView({
+            behavior: "smooth"
+        });
+    });
+
 });
-
-const goBtn = document.getElementById("goToQuizBtn");
-if (goBtn) {
-  goBtn.addEventListener("click", () => {
-    window.location.href = "http://192.168.1.77:8080/gigz.html#rounds";
-  });
-}
-
-
-const dashboardBtn = document.getElementById("dashboardLink");
-
-if (dashboardBtn) {
-  dashboardBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-
-    window.location.href =
-      "http://192.168.1.77:8080/gigz.html#dashboard";
-  });
-}
-
 </script>
-
 
 <!-- ✅ Load Socket.IO client BEFORE using io() -->
 <script src="http://192.168.1.77:8080/socket.io/socket.io.js"></script>
 <script src="script.js"></script>
 <script src="app.js"></script>
-    
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const menuToggle = document.getElementById("menuToggle");
+  const navbarLinks = document.getElementById("navbarLinks");
+
+  const navItems = document.querySelectorAll(".nav-item");
+  const pages = document.querySelectorAll(".page");
+
+  // Toggle menu
+  menuToggle.addEventListener("click", () => {
+    navbarLinks.classList.toggle("show");
+  });
+
+  // ✅ Central page switcher
+function showPage(target) {
+  console.log("Switching to:", target);
+
+  pages.forEach(p => (p.style.display = "none"));
+  navItems.forEach(n => n.classList.remove("active"));
+
+  const page = document.getElementById(target);
+  if (page) page.style.display = "block";
+
+  // 🔥 SAFE CHECK (FIXES YOUR ERROR)
+  const nav = document.querySelector(`.nav-item[data-target="${target}"]`);
+  if (nav) {
+    nav.classList.add("active");
+  }
+}
+
+    // ✅ Nav clicks
+navItems.forEach(item => {
+  item.addEventListener("click", e => {
+
+    const target = item.getAttribute("data-target");
+    const href = item.getAttribute("href");
+
+    // 🌐 external (dashboard)
+    if (!target && href && href.startsWith("http")) {
+      window.location.href = href;
+      return;
+    }
+
+    // 🧭 internal navigation
+    if (!target) return;
+
+    e.preventDefault();
+
+    showPage(target);
+
+    // 🔥 THIS IS THE KEY LINE
+    window.location.hash = target;
+  });
+});
+
+  // ✅ HANDLE URL HASH
+function router() {
+  const hash = window.location.hash.replace("#", "");
+
+  if (hash === "rounds" || hash === "scoreboard" || hash === "settings") {
+    showPage(hash);
+  } else {
+    showPage("dashboard");
+  }
+}
+
+window.addEventListener("hashchange", router);
+router();
+
+// run on hash change
+window.addEventListener("hashchange", router);
+});
+</script>
+
+<script>
+
+const NODES = [
+  "http://192.168.1.88:5000", // TV-00
+  "http://192.168.1.98:5000", // TV-01
+  "http://192.168.1.99:5000"  // TV-02
+];
+
+let currentBootstrapIndex = 0;
+let quizSocket = null;
+let currentNode = 0;
+
+let devices = [];
+let clusterMaster = null;
+
+function connectDashboard(index = 0) {
+
+  const node = NODES[index];
+
+  console.log("Connecting to:", node);
+
+  if (quizSocket) {
+    quizSocket.disconnect();
+  }
+
+  quizSocket = io(node, {
+    reconnection: false,
+    timeout: 3000
+  });
+
+  quizSocket.on("connect", () => {
+
+    console.log("✅ Dashboard connected:", node);
+
+    currentNode = index;
+
+  });
+
+  // Support OLD and NEW server.js
+  quizSocket.on("device-sync", handleCluster);
+  quizSocket.on("cluster-sync", handleCluster);
+
+  quizSocket.on("disconnect", () => {
+
+    console.log("❌ Dashboard disconnected:", node);
+
+    tryNextNode();
+
+  });
+
+  quizSocket.on("connect_error", () => {
+
+    console.log("⚠️ Node unavailable:", node);
+
+    tryNextNode();
+
+  });
+
+}
+
+function handleCluster(cluster) {
+
+  console.log("📡 CLUSTER UPDATE:", cluster);
+
+  devices = cluster.devices || [];
+  clusterMaster = cluster.master || null;
+
+  renderDevices(devices);
+
+}
+
+function tryNextNode() {
+
+  currentBootstrapIndex =
+    (currentBootstrapIndex + 1) % NODES.length;
+
+  console.log(
+    "TRYING NEXT NODE INDEX:",
+    currentBootstrapIndex
+  );
+
+  setTimeout(() => {
+    connectDashboard(currentBootstrapIndex);
+  }, 2000);
+
+}
+
+function renderDevices(devices) {
+
+  const container =
+    document.getElementById("deviceContainer");
+
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  if (devices.length === 0) {
+
+    container.innerHTML = `
+      <div style="padding:15px;border:1px solid #ccc;border-radius:8px;">
+        No devices online.
+      </div>
+    `;
+
+    return;
+
+  }
+
+  // Optional: sort devices by ID
+  devices.sort((a, b) => a.id.localeCompare(b.id));
+
+  devices.forEach(device => {
+
+    console.log("📊 DEVICE:", device);
+
+    const div = document.createElement("div");
+
+    div.style.padding = "10px";
+    div.style.margin = "5px 0";
+    div.style.border = "1px solid #ccc";
+    div.style.borderRadius = "8px";
+
+    const status =
+      device.status === "online"
+        ? "🟢 ONLINE"
+        : "🔴 OFFLINE";
+
+    const role =
+      device.id === clusterMaster
+        ? "🔥 MASTER"
+        : "🧩 SLAVE";
+
+
+    const quizSync =
+        role.includes("MASTER")
+        ? "👑 MASTER"
+        : device.quizSyncStatus === "synced"
+          ? "✅ SYNCED"
+          : "⚠️ NOT SYNCED";
+
+    // =============================================
+    // 🕒 LAST SUCCESSFUL COMMUNICATION
+    // =============================================
+    let lastCommunication = "N/A";
+
+    if (device.lastCommunication) {
+
+      const lastTime =
+        new Date(device.lastCommunication);
+
+      const secondsAgo =
+        Math.floor(
+          (Date.now() - device.lastCommunication) / 1000
+        );
+
+      if (secondsAgo < 5) {
+        lastCommunication = "Just now";
+      } else if (secondsAgo < 60) {
+        lastCommunication = `${secondsAgo} seconds ago`;
+      } else {
+
+        const minutesAgo =
+          Math.floor(secondsAgo / 60);
+
+        lastCommunication =
+          `${minutesAgo} minute${minutesAgo !== 1 ? "s" : ""} ago`;
+      }
+    }
+
+    div.innerHTML = `
+      <strong>${device.id}</strong>
+      <br>
+      ${role} | ${status}
+      <br>
+      RSSI: ${device.rssi ?? "N/A"}
+      <br>
+      🕒 Last Communication: ${lastCommunication}
+      <br>
+      🔄 Quiz Sync: ${quizSync}
+    `;
+
+    container.appendChild(div);
+
+
+  });
+
+}
+
+// Start dashboard
+connectDashboard(0);
+</script>
+
+<script>
+  // =============================================
+// 📦 Upload Confirmation
+// =============================================
+function showUploadMessage(message, success = true) {
+
+  console.log("📢 showUploadMessage() called");
+
+  const box = document.getElementById("upload-msg");
+
+  console.log("upload-msg element:", box);
+
+  if (!box) return;
+
+  box.style.display = "block";
+  box.style.padding = "14px 18px";
+  box.style.marginBottom = "12px";
+  box.style.borderRadius = "10px";
+  box.style.fontWeight = "600";
+  box.style.fontSize = "14px";
+  box.style.lineHeight = "1.5";
+  box.style.whiteSpace = "pre-line";
+
+  // Controller App theme
+  box.style.background = "linear-gradient(135deg, var(--secondary), var(--accent))";
+
+  // Dark text works better with the bright gradient
+  box.style.color = "#111827";
+
+  box.style.border = "none";
+
+  box.style.boxShadow =
+      "0 4px 14px rgba(0, 122, 223, 0.25)";
+
+  box.style.transition =
+      "opacity 0.25s ease, transform 0.25s ease";
+
+  box.style.opacity = "1";
+  box.style.transform = "translateY(0)";
+
+  box.textContent = message;
+
+  clearTimeout(box._timer);
+
+  box._timer = setTimeout(() => {
+
+    box.style.opacity = "0";
+    box.style.transform = "translateY(-4px)";
+
+    setTimeout(() => {
+      box.style.display = "none";
+      box.textContent = "";
+    }, 250);
+
+  }, 7000);
+}
+</script>
+
 </body>
 </html>

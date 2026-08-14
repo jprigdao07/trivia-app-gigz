@@ -10,6 +10,7 @@ const sharp = require('sharp');
 const fs = require('fs');
 const http = require('http');
 const { Server } = require('socket.io');
+const { io: Client } = require("socket.io-client");
 
 const app = express();
 app.use(express.static(path.join(__dirname, 'public')));
@@ -33,6 +34,29 @@ const io = new Server(server, {
     methods: ['GET', 'POST', 'PUT', 'DELETE']
     },
   transports: ["websocket", "polling"]
+});
+
+
+// =============================================
+// 🔗 Connect to Controller Server
+// =============================================
+const controllerSocket = Client("http://192.168.1.77:8080", {
+  transports: ["websocket"],
+  auth: {
+    role: "quiz-server"
+  }
+});
+
+controllerSocket.on("connect", () => {
+  console.log("✅ Connected to Controller Server");
+});
+
+controllerSocket.on("disconnect", (reason) => {
+  console.log("❌ Disconnected from Controller Server:", reason);
+});
+
+controllerSocket.on("connect_error", (err) => {
+  console.error("❌ Controller connection error:", err.message);
 });
 
 
@@ -2813,6 +2837,71 @@ app.post("/api/quizzes/:id/activate", async (req, res) => {
   }
 });
 
+
+
+// =====================================================
+// 🔄 Reactivate Finished Quiz
+// =====================================================
+app.patch('/api/quiz/:gameId/reactivate', async (req, res) => {
+  try {
+    const { gameId } = req.params;
+
+    // 1️⃣ Get current quiz status
+    const [rows] = await db.execute(
+      `SELECT id, status
+       FROM games
+       WHERE id = ?`,
+      [gameId]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({
+        error: "Game not found"
+      });
+    }
+
+    const game = rows[0];
+
+    // 2️⃣ Only finished quizzes can be reactivated
+    if (game.status?.toLowerCase() !== "finished") {
+      return res.status(409).json({
+        error: "Quiz is not finished",
+        message: "Only finished quizzes can be reactivated."
+      });
+    }
+
+    // 3️⃣ Change status back to active
+    await db.execute(
+      `UPDATE games
+       SET status = 'active'
+       WHERE id = ?`,
+      [gameId]
+    );
+
+    // 4️⃣ Get updated game
+    const [updatedRows] = await db.execute(
+      `SELECT id, status, day, location,
+              team_a_score, team_b_score, team_c_score
+       FROM games
+       WHERE id = ?`,
+      [gameId]
+    );
+
+    // 5️⃣ Return updated game
+    res.json({
+      message: "Quiz reactivated successfully.",
+      game: updatedRows[0]
+    });
+
+  } catch (err) {
+    console.error("❌ Error reactivating quiz:", err);
+
+    res.status(500).json({
+      error: "Failed to reactivate quiz"
+    });
+  }
+});
+
 // Get all games sorted by creation time
 app.get('/api/games', async (req, res) => {
   try {
@@ -3034,7 +3123,7 @@ app.get('/api/quiz/:gameId', async (req, res) => {
 
     // 1️⃣ Get game info
     const [gameRows] = await db.execute(
-      `SELECT id, day, location, team_a_score, team_b_score, team_c_score
+      `SELECT id, status, day, location, team_a_score, team_b_score, team_c_score
        FROM games
        WHERE id = ?`,
       [gameId]
@@ -3281,7 +3370,15 @@ app.post("/api/assign-quiz", async (req, res) => {
 
     const params = location ? [day, location, quizId] : [day, quizId];
 
-    await db.execute(query, params);
+    const [result] = await db.execute(query, params);
+
+    console.log("Affected rows:", result.affectedRows);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        error: "Quiz not found."
+      });
+    }
 
     res.json({ success: true, message: `Quiz ${quizId} assigned to ${day}${location ? ' at ' + location : ''}` });
   } catch (err) {
@@ -3310,10 +3407,28 @@ app.patch("/api/quiz/:quizId/activate", async (req, res) => {
       const [newRows] = await db.execute(`SELECT * FROM games WHERE id = ?`, [quizId]);
       game = newRows[0];
       console.log(`🆕 Created new active game with ID: ${quizId}`);
-    } else {
-      // If found, just update the status
-      await db.execute(`UPDATE games SET status = 'active' WHERE id = ?`, [quizId]);
-      console.log(`♻️ Reused existing game ID: ${quizId}`);
+} else {
+
+    // 🛑 Prevent reuse of a completed quiz
+    if (game.status === "finished") {
+
+        console.log(
+            `🛑 Quiz ${quizId} is already finished and cannot be automatically activated.`
+        );
+
+        return res.status(409).json({
+            success: false,
+            message: "Quiz is already finished and cannot be reused automatically.",
+            game
+        });
+    }
+
+    // Existing behavior
+    await db.execute(
+    `UPDATE games SET status = 'active' WHERE id = ?`,
+    [quizId]);
+
+        console.log(`♻️ Reused existing game ID: ${quizId}`);
     }
 
     // ✅ Assign this quiz_id to all unlinked teams
@@ -3421,52 +3536,266 @@ app.get("/api/quiz/:quizId/teams", async (req, res) => {
 // =====================================================
 app.post("/api/upload-session", async (req, res) => {
 
-  try {
+    const requestId = require("crypto").randomUUID();
 
-    const session = req.body;
+    console.log("");
+    console.log("========================================");
+    console.log("🚨 UPLOAD ENDPOINT CALLED");
+    console.log("Request ID:", requestId);
+    console.log("Game ID:", req.body?.gameId);
+    console.log("Master:", req.body?.master);
+    console.log("Time:", new Date().toISOString());
+    console.log("========================================");
 
-    console.log("📦 Session upload received");
-    console.log(session);
+    try {
 
-    await db.execute(
-      `
-      INSERT INTO sessions
-      (
-        game_id,
-        master_device,
-        completed_at,
-        uploaded_at,
-        session_data
-      )
-      VALUES (?, ?, ?, ?, ?)
-      `,
-      [
-        session.gameId ?? null,
-        session.master ?? null,
-        session.completedAt ?? null,
-        session.uploadedAt ?? null,
-        JSON.stringify(session ?? {})
-      ]
-    );
+        const session = req.body;
 
-    console.log("✅ Session saved to database.");
+        // =============================================
+        // 🛡️ VALIDATE GAME ID
+        // =============================================
+        if (!session?.gameId) {
 
-    res.json({
-      success: true,
-      message: "Session uploaded successfully."
-    });
+            console.error("❌ Missing Game ID.");
+            console.error("Request ID:", requestId);
 
-  } catch (err) {
+            return res.status(400).json({
+                success: false,
+                message: "Game ID is required."
+            });
+        }
 
-    console.error("❌ Session upload failed:", err);
+        console.log("📦 Session upload received");
+        console.log("Request ID:", requestId);
+        console.log("Game ID:", session.gameId);
 
-    res.status(500).json({
-      success: false,
-      message: "Failed to upload session."
-    });
+        // =============================================
+        // 💾 ATOMIC SESSION INSERT
+        // =============================================
+        //
+        // INSERT IGNORE prevents the UNIQUE game_id
+        // constraint from becoming a server error when
+        // the same session is submitted more than once.
+        //
+        const [insertResult] = await db.execute(
+            `
+            INSERT IGNORE INTO sessions
+            (
+                game_id,
+                master_device,
+                completed_at,
+                uploaded_at,
+                session_data
+            )
+            VALUES (?, ?, ?, ?, ?)
+            `,
+            [
+                session.gameId,
+                session.master ?? null,
+                session.completedAt ?? null,
+                session.uploadedAt ?? null,
+                JSON.stringify(session)
+            ]
+        );
 
-  }
+        // =============================================
+        // ⚠️ DUPLICATE UPLOAD
+        // =============================================
+        if (insertResult.affectedRows === 0) {
 
+            console.log("⚠️ Session already exists.");
+            console.log("Request ID:", requestId);
+            console.log("Game ID:", session.gameId);
+
+            console.log(
+                "⏭️ Duplicate upload ignored."
+            );
+
+            // IMPORTANT:
+            // Do NOT emit master:session_upload_failed.
+            //
+            // The session already exists in the database,
+            // so this is considered a successful/idempotent
+            // response.
+
+            return res.json({
+                success: true,
+                alreadyUploaded: true,
+                message: "Session was already uploaded."
+            });
+        }
+
+        // =============================================
+        // ✅ NEW SESSION SAVED
+        // =============================================
+
+        console.log("✅ Session saved to database.");
+        console.log("Request ID:", requestId);
+        console.log("Game ID:", session.gameId);
+
+        // =============================================
+        // 📡 NOTIFY CONTROLLER APP — SUCCESS
+        // =============================================
+
+        controllerSocket.emit("master:session_uploaded", {
+
+            gameId: session.gameId,
+
+            uploadedAt:
+                session.uploadedAt ||
+                new Date().toISOString(),
+
+            master: session.master
+
+        });
+
+        console.log(
+            "📡 Upload confirmation sent to Controller Server."
+        );
+
+        console.log(
+            "Request ID:",
+            requestId
+        );
+
+        console.log(
+            "🟢 SESSION DATABASE UPLOAD SUCCESSFUL"
+        );
+
+        // =============================================
+        // 📤 HTTP SUCCESS RESPONSE
+        // =============================================
+
+        return res.json({
+            success: true,
+            alreadyUploaded: false,
+            message: "Session uploaded successfully."
+        });
+
+    } catch (err) {
+
+        console.error("========================================");
+        console.error("🔴 UPLOAD SESSION FAILED");
+        console.error("Request ID:", requestId);
+        console.error("Game ID:", req.body?.gameId);
+        console.error("Error:", err);
+        console.error("========================================");
+
+        // =============================================
+        // 📡 NOTIFY CONTROLLER APP — REAL FAILURE ONLY
+        // =============================================
+
+        controllerSocket.emit(
+            "master:session_upload_failed",
+            {
+                gameId: req.body?.gameId ?? null
+            }
+        );
+
+        console.log(
+            "📡 Upload failure sent to Controller Server."
+        );
+
+        console.log(
+            "Request ID:",
+            requestId
+        );
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to upload session."
+        });
+    }
+
+});
+
+
+// =====================================================
+// 🏁 MARK QUIZ AS FINISHED
+// =====================================================
+app.patch("/api/quiz/:quizId/finish", async (req, res) => {
+
+    const { quizId } = req.params;
+
+    try {
+
+        const [rows] = await db.execute(
+            `SELECT * FROM games WHERE id = ?`,
+            [quizId]
+        );
+
+        if (!rows.length) {
+
+            return res.status(404).json({
+                success: false,
+                message: "Quiz not found."
+            });
+        }
+
+        const game = rows[0];
+
+        // Already finished
+        if (game.status === "finished") {
+
+            console.log(
+                `ℹ️ Quiz ${quizId} is already marked as finished.`
+            );
+
+            return res.json({
+                success: true,
+                alreadyFinished: true,
+                message: "Quiz is already finished.",
+                game
+            });
+        }
+
+        // Only mark active quizzes as finished
+        if (game.status !== "active") {
+
+            console.log(
+                `⚠️ Quiz ${quizId} cannot be marked as finished. Current status: ${game.status}`
+            );
+
+            return res.status(409).json({
+                success: false,
+                message: `Quiz cannot be marked as finished from status '${game.status}'.`,
+                game
+            });
+        }
+
+        await db.execute(
+            `UPDATE games SET status = 'finished' WHERE id = ?`,
+            [quizId]
+        );
+
+        const [updatedRows] = await db.execute(
+            `SELECT * FROM games WHERE id = ?`,
+            [quizId]
+        );
+
+        console.log(
+            `🏁 Quiz ${quizId} marked as FINISHED.`
+        );
+
+        return res.json({
+            success: true,
+            alreadyFinished: false,
+            message: "Quiz marked as finished.",
+            game: updatedRows[0]
+        });
+
+    } catch (err) {
+
+        console.error(
+            "❌ Failed to mark quiz as finished:",
+            err
+        );
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to mark quiz as finished."
+        });
+    }
 });
 
 //IO  CONNECTION

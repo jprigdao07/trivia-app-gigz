@@ -112,64 +112,64 @@ let latestGameCleanupTimer = null;
 // =============================================
 // 🕛 SCHEDULE SERVER MIDNIGHT CLEANUP
 // =============================================
-function scheduleLatestGameCleanup() {
+// function scheduleLatestGameCleanup() {
 
-  // Cancel previous timer if there is one
-  if (latestGameCleanupTimer) {
-    clearTimeout(latestGameCleanupTimer);
-  }
+//   // Cancel previous timer if there is one
+//   if (latestGameCleanupTimer) {
+//     clearTimeout(latestGameCleanupTimer);
+//   }
 
-  const now = new Date();
+//   const now = new Date();
 
-  const midnight = new Date(now);
-  midnight.setHours(24, 0, 0, 0);
+//   const midnight = new Date(now);
+//   midnight.setHours(24, 0, 0, 0);
 
-  const delay = midnight - now;
+//   const delay = midnight - now;
 
-  console.log(
-    `🕛 Server cleanup scheduled in ${Math.round(delay / 1000)} seconds`
-  );
+//   console.log(
+//     `🕛 Server cleanup scheduled in ${Math.round(delay / 1000)} seconds`
+//   );
 
-  latestGameCleanupTimer = setTimeout(() => {
+//   latestGameCleanupTimer = setTimeout(() => {
 
-    console.log("🗑 Midnight reached");
+//     console.log("🗑 Midnight reached");
 
-    latestGameId = null;
+//     latestGameId = null;
 
-    console.log("✅ latestGameId cleared");
+//     console.log("✅ latestGameId cleared");
 
-    io.emit("latest-game-id-updated", {
-      id: null
-    });
+//     io.emit("latest-game-id-updated", {
+//       id: null
+//     });
 
-  }, delay);
+//   }, delay);
 
-}
+// }
 
 // =============================================
 // 🕛 SCHEDULE SERVER CLEANUP (TEST MODE) Server
 // =============================================
-// function scheduleLatestGameCleanup() {
+function scheduleLatestGameCleanup() {
 
-//     if (latestGameCleanupTimer) {
-//         clearTimeout(latestGameCleanupTimer);
-//     }
+    if (latestGameCleanupTimer) {
+        clearTimeout(latestGameCleanupTimer);
+    }
 
-//     console.log("🧪 TEST MODE: Server cleanup scheduled in 20 seconds");
+    console.log("🧪 TEST MODE: Server cleanup scheduled in 20 seconds");
 
-//     latestGameCleanupTimer = setTimeout(() => {
+    latestGameCleanupTimer = setTimeout(() => {
 
-//         console.log("🗑 TEST MODE: Server cleanup");
+        console.log("🗑 TEST MODE: Server cleanup");
 
-//         latestGameId = null;
+        latestGameId = null;
 
-//         console.log("✅ latestGameId cleared");
+        console.log("✅ latestGameId cleared");
 
-//         // Don't broadcast null during testing.
-//         // io.emit("latest-game-id-updated", { id: null });
+        // Don't broadcast null during testing.
+        // io.emit("latest-game-id-updated", { id: null });
 
-//     }, 20000);
-// }
+    }, 30000);
+}
 
 // ✅ API to set the latest active game ID
 app.post('/api/set-latest-game-id', express.json(), (req, res) => {
@@ -226,10 +226,81 @@ app.post("/api/start-countdown", (req, res) => {
 
 // 🧩 --- SOCKET.IO HANDLING --- 🧩
 io.on("connection", (socket) => {
+  console.log("Handshake auth:", socket.handshake.auth);
+
   const { role, gameId } = socket.handshake.auth || {};
   console.log(`🟢 New client connected: ${socket.id} (${role || "unknown"})`);
 
     console.log("Client connected:", socket.id);
+
+
+if (role === "quiz-server") {
+
+    console.log("📦 Quiz Server connected.");
+
+    socket.on("master:session_uploaded", (data) => {
+
+        console.log("🎉 RECEIVED master:session_uploaded");
+        console.log(data);
+
+        console.log("Clients:", io.engine.clientsCount);
+
+        io.fetchSockets().then((sockets) => {
+            console.log("Connected sockets:");
+
+            sockets.forEach(s => {
+                console.log(
+                    s.id,
+                    s.handshake.auth.role,
+                    s.handshake.auth.gameId
+                );
+            });
+        });
+
+        console.log("📡 About to broadcast session-upload-success");
+
+        console.log("📡 About to broadcast session-upload-success");
+
+        io.fetchSockets().then((sockets) => {
+
+            sockets.forEach(s => {
+
+                console.log(
+                    "📤 Sending session-upload-success to:",
+                    s.id,
+                    s.handshake.auth?.role,
+                    s.handshake.auth?.gameId
+                );
+
+                s.emit("session-upload-success", data);
+
+            });
+
+            console.log("📡 session-upload-success broadcast completed");
+
+            });
+
+        console.log("📢 Broadcasted upload confirmation.");
+
+        console.log("📡 session-upload-success broadcast completed");
+
+    });
+
+    socket.on("master:session_upload_failed", (data) => {
+
+        console.log("❌ RECEIVED master:session_upload_failed");
+
+
+        console.log("📛 Failure sender socket:", socket.id);
+        console.log("📛 Failure sender role:", socket.handshake.auth?.role);
+        console.log("📛 Failure sender gameId:", socket.handshake.auth?.gameId);
+        console.log("📛 Failure payload:", data);
+
+        io.emit("session-upload-failed", data);
+
+    });
+
+}
 
   // =========================================
   // RELAY QUIZ PACKAGE TO SLAVES
@@ -240,6 +311,11 @@ io.on("connection", (socket) => {
 
     socket.broadcast.emit("master:quiz_data", payload);
 
+  });
+
+
+  socket.on("ping-test", () => {
+    console.log("✅ Ping received from controller:", socket.id);
   });
 
 
@@ -471,20 +547,58 @@ socket.on("quiz:new_created", ({ gameId }) => {
 //   console.log("🔁 Broadcasting countdown start:", data);
 //   io.emit("start-countdown", data); // Send to all displays
 // });
-    socket.on("master:session_uploaded", (payload) => {
 
-        console.log("📦 Session uploaded:", payload.gameId);
+socket.on("master:session_uploaded", (payload) => {
 
-        io.emit("session-uploaded", payload);
+    console.log("");
+    console.log("========================================");
+    console.log("📦 MASTER SESSION UPLOADED RECEIVED");
+    console.log("Game ID:", payload?.gameId);
+    console.log("Uploaded At:", payload?.uploadedAt);
+    console.log("Master:", payload?.master);
+    console.log("Sender Socket ID:", socket.id);
+    console.log("========================================");
 
+    io.emit("session-uploaded", payload);
+
+    console.log("📡 session-uploaded BROADCAST SENT");
+    console.log("Game ID:", payload?.gameId);
+    console.log("Uploaded At:", payload?.uploadedAt);
+});
+
+
+socket.on("master:session_upload_failed", (payload) => {
+
+    console.log("");
+    console.log("========================================");
+    console.log("🔴 MASTER SESSION UPLOAD FAILED");
+    console.log("Game ID:", payload?.gameId);
+    console.log("Socket ID:", socket.id);
+    console.log("========================================");
+
+    io.emit("session-upload-failed", payload);
+
+    console.log("📡 session-upload-failed BROADCAST");
+    console.log("Game ID:", payload?.gameId);
+});
+
+
+socket.on("controller:session_complete", ({ gameId }) => {
+
+    console.log("");
+    console.log("========================================");
+    console.log("📦 [controller] SESSION COMPLETE RECEIVED");
+    console.log("Game ID:", gameId);
+    console.log("Sender Socket ID:", socket.id);
+    console.log("Sender Role:", socket.handshake.auth?.role);
+    console.log("========================================");
+
+    io.emit("controller:session_complete", {
+        gameId
     });
 
-    socket.on("controller:session_complete", ({ gameId }) => {
-
-    console.log("📦 [controller] Session complete:", gameId);
-
-    io.emit("controller:session_complete", { gameId });
-
+    console.log("📡 controller:session_complete BROADCAST");
+    console.log("Game ID:", gameId);
 });
 });
 
