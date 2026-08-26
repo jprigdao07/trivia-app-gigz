@@ -427,37 +427,46 @@ socket.on("start-countdown", ({ gameId, scheduledStart }) => {
 // =============================================
 // 🔌 SOCKET ROLE SYNC (GLOBAL LISTENER)
 // =============================================
+
 socket.on("role-update", (data) => {
 
-  console.log("ROLE UPDATE DATA:", data);
-  console.log("MY ROLE:", data.role);
+  console.log("📡 ROLE UPDATE RECEIVED:", data);
 
-  window.deviceRole = data.role;
-
-  localStorage.setItem(
-    "deviceRole",
-    data.role
-  );
-
-  console.log(
-    "📡 ROLE UPDATED:",
-    window.deviceRole
+  console.warn(
+    "⚠️ role-update received. Cluster role remains controlled by device-sync."
   );
 
 });
 
 clusterSocket.on("device-sync", (data) => {
 
-  if (!window.DEVICE_ID) return;
+  if (!window.DEVICE_ID) {
+    console.warn("⚠️ DEVICE_ID not available");
+    return;
+  }
 
-  const myDevice = data.devices.find(
+  const myDevice = data.devices?.find(
     d => d.id === window.DEVICE_ID
   );
 
-  if (!myDevice) return;
+  if (!myDevice) {
+    console.warn(
+      "⚠️ My device not found in cluster state:",
+      window.DEVICE_ID
+    );
+    return;
+  }
 
-  const oldRole = window.deviceRole;
   const newRole = myDevice.role;
+  const oldRole = window.deviceRole;
+
+  console.log("=================================");
+  console.log("📡 CLUSTER ROLE SYNC");
+  console.log("Device ID:", window.DEVICE_ID);
+  console.log("Cluster Master:", data.master);
+  console.log("Old Role:", oldRole);
+  console.log("New Role:", newRole);
+  console.log("=================================");
 
   if (oldRole !== newRole) {
 
@@ -465,15 +474,14 @@ clusterSocket.on("device-sync", (data) => {
       `🔄 Role changed: ${oldRole} → ${newRole}`
     );
 
-    window.deviceRole = newRole;
-
-    localStorage.setItem(
-      "deviceRole",
-      newRole
-    );
-
   }
 
+  window.deviceRole = newRole;
+
+  localStorage.setItem(
+    "deviceRole",
+    newRole
+  );
 });
 
 // =============================================
