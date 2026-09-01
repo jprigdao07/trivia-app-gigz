@@ -218,12 +218,12 @@ input {
   background: var(--bg-card);
   border-radius: var(--radius);
   padding: 20px;
-
+  margin: auto;
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-
+  max-width: 100%;
   box-shadow: var(--shadow-sm);
 }
 
@@ -897,9 +897,9 @@ input {
   justify-content: space-between; /* name left, trash right */
   align-items: center;            /* vertical center */
   margin-bottom: 0.5rem;   
-  background: #be7ebb;
+  background: #6e6e6e;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(254, 253, 253, 0.1);
   padding: 1rem;
   text-align: center;
   transition: transform 0.2s ease, box-shadow 0.2s ease;

@@ -632,7 +632,7 @@ async function populateQuizList() {
         margin-bottom: 8px;
         cursor: ${isFinished ? 'not-allowed' : 'pointer'};
         border-radius: 6px;
-        background: linear-gradient(90deg, #6a1b9a, #8e24aa);
+        background: #37383a;
         color: #fff;
         transition: background 0.2s;
         opacity: ${isActive ? 1 : 0.5};

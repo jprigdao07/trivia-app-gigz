@@ -1033,6 +1033,159 @@ app.get("/api/latest-countdown", async (req, res) => {
   }
 });
 
+// =====================================================
+// 📊 GET DASHBOARD DATA
+// =====================================================
+app.get('/api/dashboard', async (req, res) => {
+
+  try {
+
+    // =================================================
+    // 1. ACTIVE QUIZZES
+    // =================================================
+    const [activeQuizRows] = await db.execute(`
+      SELECT COUNT(*) AS total
+      FROM games
+      WHERE LOWER(status) IN ('active', 'live')
+    `);
+
+
+    // =================================================
+    // 2. TOTAL TEAMS
+    // =================================================
+    const [teamRows] = await db.execute(`
+      SELECT COUNT(*) AS total
+      FROM teams
+      WHERE is_active = 1
+    `);
+
+
+    // =================================================
+    // 3. LIVE LOCATIONS
+    // =================================================
+    const [locationRows] = await db.execute(`
+      SELECT COUNT(DISTINCT TRIM(location)) AS total
+      FROM games
+      WHERE LOWER(status) IN ('active', 'live')
+        AND location IS NOT NULL
+        AND TRIM(location) <> ''
+    `);
+
+
+    // =================================================
+    // 4. TOTAL QUIZ SESSIONS
+    // =================================================
+    const [sessionRows] = await db.execute(`
+      SELECT COUNT(*) AS total
+      FROM sessions
+    `);
+
+
+    // =================================================
+    // 5. RECENT GAMES + TEAM COUNT
+    // =================================================
+    const [recentGames] = await db.execute(`
+      SELECT
+        g.id,
+        g.auto_id,
+        g.status,
+        g.created_at,
+        g.day,
+        g.location,
+        g.scheduled_start_at,
+
+        COUNT(t.id) AS team_count
+
+      FROM games g
+
+      LEFT JOIN teams t
+        ON t.quiz_id = g.auto_id
+
+      GROUP BY
+        g.id,
+        g.auto_id,
+        g.status,
+        g.created_at,
+        g.day,
+        g.location,
+        g.scheduled_start_at
+
+      ORDER BY g.created_at DESC
+
+      LIMIT 10
+    `);
+
+
+    // =================================================
+    // 6. RESPONSE
+    // =================================================
+    res.json({
+
+      success: true,
+
+      stats: {
+
+        activeQuizzes:
+          Number(activeQuizRows[0]?.total || 0),
+
+        totalTeams:
+          Number(teamRows[0]?.total || 0),
+
+        liveLocations:
+          Number(locationRows[0]?.total || 0),
+
+        totalSessions:
+          Number(sessionRows[0]?.total || 0)
+
+      },
+
+      recentQuizzes: recentGames.map(game => ({
+
+        id: game.id,
+
+        auto_id: game.auto_id,
+
+        status: game.status,
+
+        created_at: game.created_at,
+
+        day: game.day,
+
+        location: game.location,
+
+        scheduled_start_at:
+          game.scheduled_start_at,
+
+        teamCount:
+          Number(game.team_count || 0)
+
+      }))
+
+    });
+
+  } catch (err) {
+
+    console.error(
+      '❌ Error fetching dashboard data:',
+      err
+    );
+
+    res.status(500).json({
+
+      success: false,
+
+      message:
+        'Failed to fetch dashboard data',
+
+      error:
+        err.message
+
+    });
+
+  }
+
+});
+
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
   console.log(`🚀 Socket.IO bridge running on http://localhost:${PORT}`);

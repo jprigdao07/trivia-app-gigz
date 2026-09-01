@@ -40,68 +40,57 @@ if (localStorage.getItem("loginStarted") !== "true") {
   </nav>
   
 <div class="content">
- <section id="dashboard" class="page active">
+<section id="dashboard" class="page active">
   <div class="dash-div">
-    <!-- <h1>🎮 Gigz Dashboard</h1>
-    <p>Welcome back, Host! Here’s an overview of your quiz activities.</p> -->
 
-        <!-- Device cards -->
+    <!-- Device cards -->
     <div id="deviceContainer" style="width: 100%;"></div>
 
     <!-- === STATS OVERVIEW === -->
     <div class="stats-grid">
+
       <div class="stat-card">
-        <h2>5</h2>
+        <h2 id="activeQuizzesCount">0</h2>
         <p>Active Quizzes</p>
       </div>
+
       <div class="stat-card">
-        <h2>12</h2>
+        <h2 id="totalTeamsCount">0</h2>
         <p>Total Teams</p>
       </div>
+
       <div class="stat-card">
-        <h2>3</h2>
+        <h2 id="liveLocationsCount">0</h2>
         <p>Live Locations</p>
       </div>
+
       <div class="stat-card">
-        <h2>128</h2>
-        <p>Total Players</p>
+        <h2 id="totalSessionsCount">0</h2>
+        <p>Total Quiz Sessions</p>
       </div>
+
     </div>
 
     <!-- === RECENT QUIZZES === -->
     <div class="recent-quizzes">
       <h2>🧩 Recent Quizzes</h2>
+
       <table class="quiz-table">
-        <thead>
+        <thead style="color: black;">
           <tr>
-            <th>Quiz Name</th>
+            <th>Quiz</th>
             <th>Location</th>
             <th>Status</th>
-            <th>Players</th>
+            <th>Teams</th>
             <th>Action</th>
           </tr>
         </thead>
-        <tbody>
+
+        <tbody id="recentQuizzesBody">
           <tr>
-            <td>General Trivia Night</td>
-            <td>Downtown Pub</td>
-            <td><span class="badge live">Live</span></td>
-            <td>24</td>
-            <td><button class="btn-start">View</button></td>
-          </tr>
-          <tr>
-            <td>Science Challenge</td>
-            <td>City Library</td>
-            <td><span class="badge scheduled">Scheduled</span></td>
-            <td>18</td>
-            <td><button class="btn-start">Start</button></td>
-          </tr>
-          <tr>
-            <td>Music Mania</td>
-            <td>Campus Hall</td>
-            <td><span class="badge ended">Ended</span></td>
-            <td>30</td>
-            <td><button class="btn-start">Review</button></td>
+            <td colspan="5" style="text-align: center;">
+              Loading quizzes...
+            </td>
           </tr>
         </tbody>
       </table>
@@ -110,6 +99,7 @@ if (localStorage.getItem("loginStarted") !== "true") {
     <!-- === QUICK ACTIONS === -->
     <div class="quick-actions">
       <h2>⚡ Quick Actions</h2>
+
       <div class="actions-grid">
         <button class="btn-primary">➕ Create New Quiz</button>
         <button class="btn-secondary">📅 Schedule Quiz</button>
@@ -117,6 +107,7 @@ if (localStorage.getItem("loginStarted") !== "true") {
         <button class="btn-outline">📊 View Reports</button>
       </div>
     </div>
+
   </div>
 </section>
 
@@ -725,6 +716,320 @@ function showUploadMessage(message, success = true) {
     }, 250);
 
   }, 7000);
+}
+</script>
+
+
+<script>
+
+// =====================================================
+// 📊 LOAD DASHBOARD DATA
+// =====================================================
+async function loadDashboard() {
+
+  console.log("📊 Loading dashboard...");
+
+  try {
+
+    const response = await fetch(
+      "http://localhost:8080/api/dashboard"
+    );
+
+    console.log(
+      "📊 Dashboard HTTP status:",
+      response.status
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `HTTP ${response.status}`
+      );
+    }
+
+    const data = await response.json();
+
+    console.log(
+      "📊 Dashboard API response:",
+      data
+    );
+
+
+    // ==========================================
+    // UPDATE STAT CARDS
+    // ==========================================
+
+    const activeQuizzes =
+      document.getElementById(
+        "activeQuizzesCount"
+      );
+
+    const totalTeams =
+      document.getElementById(
+        "totalTeamsCount"
+      );
+
+    const liveLocations =
+      document.getElementById(
+        "liveLocationsCount"
+      );
+
+    const totalSessions =
+      document.getElementById(
+        "totalSessionsCount"
+      );
+
+
+    console.log("📊 Dashboard elements:", {
+      activeQuizzes,
+      totalTeams,
+      liveLocations,
+      totalSessions
+    });
+
+
+    if (activeQuizzes) {
+      activeQuizzes.textContent =
+        data.stats.activeQuizzes;
+    }
+
+    if (totalTeams) {
+      totalTeams.textContent =
+        data.stats.totalTeams;
+    }
+
+    if (liveLocations) {
+      liveLocations.textContent =
+        data.stats.liveLocations;
+    }
+
+    if (totalSessions) {
+      totalSessions.textContent =
+        data.stats.totalSessions;
+    }
+
+
+    // ==========================================
+    // RECENT QUIZZES
+    // ==========================================
+
+    const tbody =
+      document.getElementById(
+        "recentQuizzesBody"
+      );
+
+
+    if (!tbody) {
+
+      console.error(
+        "❌ recentQuizzesBody was not found."
+      );
+
+      return;
+
+    }
+
+
+    tbody.innerHTML = "";
+
+
+    if (
+      !data.recentQuizzes ||
+      data.recentQuizzes.length === 0
+    ) {
+
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5"
+              style="text-align:center;">
+            No quiz records found.
+          </td>
+        </tr>
+      `;
+
+      return;
+
+    }
+
+
+    data.recentQuizzes.forEach(game => {
+
+      const status =
+        String(
+          game.status || "unknown"
+        ).toLowerCase();
+
+
+      let badgeClass = "ended";
+
+
+      if (
+        status === "active" ||
+        status === "live"
+      ) {
+
+        badgeClass = "live";
+
+      }
+      else if (
+        status === "scheduled"
+      ) {
+
+        badgeClass = "scheduled";
+
+      }
+
+
+      const row =
+        document.createElement("tr");
+
+
+      row.innerHTML = `
+
+        <td>
+          Game #${game.auto_id}
+        </td>
+
+        <td>
+          ${game.location || "N/A"}
+        </td>
+
+        <td>
+          <span class="badge ${badgeClass}">
+            ${game.status || "Unknown"}
+          </span>
+        </td>
+
+        <td>
+          ${game.teamCount ?? 0}
+        </td>
+
+        <td>
+          <button
+            class="btn-start"
+            data-game-id="${game.id}"
+            data-quiz-id="${game.auto_id}">
+            View
+          </button>
+        </td>
+
+      `;
+
+const viewButton =
+  row.querySelector(".btn-start");
+
+if (viewButton) {
+
+  viewButton.addEventListener(
+    "click",
+    () => {
+
+      const gameId =
+        viewButton.dataset.gameId;
+
+      const quizId =
+        viewButton.dataset.quizId;
+
+      console.log(
+        "👁️ View quiz:",
+        {
+          gameId,
+          quizId
+        }
+      );
+
+      viewGame(
+        gameId,
+        quizId
+      );
+
+    }
+  );
+
+}
+
+      tbody.appendChild(row);
+
+    });
+
+
+    console.log(
+      "✅ Dashboard updated successfully."
+    );
+
+  }
+  catch (error) {
+
+    console.error(
+      "❌ Dashboard loading failed:",
+      error
+    );
+
+  }
+
+}
+loadDashboard();
+
+// =====================================================
+// 👁️ VIEW QUIZ DATA
+// =====================================================
+async function viewGame(gameId, quizId) {
+
+  console.log("👁️ Viewing quiz:", {
+    gameId,
+    quizId
+  });
+
+  try {
+
+    const response = await fetch(
+      `http://localhost:8080/api/quiz-data?quiz_id=${quizId}`
+    );
+
+    console.log(
+      "📊 Quiz data HTTP status:",
+      response.status
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to load quiz data. HTTP ${response.status}`
+      );
+    }
+
+    const data = await response.json();
+
+    console.log(
+      "📊 Quiz data:",
+      data
+    );
+
+    // Store selected quiz
+    window.selectedGameId = gameId;
+    window.selectedQuizId = quizId;
+    window.selectedQuizTeams = data.teams;
+
+    // Temporary test
+    alert(
+      `Quiz #${quizId}\n\n` +
+      `Teams: ${data.teams.length}\n\n` +
+      data.teams.map(team =>
+        `${team.team_name}: ${team.score}`
+      ).join("\n")
+    );
+
+  } catch (error) {
+
+    console.error(
+      "❌ Failed to load quiz data:",
+      error
+    );
+
+    alert(
+      "Failed to load quiz data."
+    );
+
+  }
+
 }
 </script>
 
