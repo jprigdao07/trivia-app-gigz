@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <title>Gigz</title>
 
 <script>
@@ -73,7 +74,7 @@ if (localStorage.getItem("loginStarted") !== "true") {
 
     <!-- === RECENT QUIZZES === -->
     <div class="recent-quizzes">
-      <h2>🧩 Recent Quizzes</h2>
+      <h2 style="color: #ccc;">🧩 Recent Quizzes</h2>
 
       <table class="quiz-table">
         <thead style="color: black;">
@@ -96,8 +97,39 @@ if (localStorage.getItem("loginStarted") !== "true") {
       </table>
     </div>
 
+
+    
+    <!-- === DASHBOARD CHARTS === -->
+    <div class="dashboard-charts">
+
+      <!-- Quiz Activity -->
+      <div class="chart-card chart-large">
+
+        <div class="chart-header">
+          <h2>📈 Quiz Activity</h2>
+          <p>Quiz creation and active quizzes over time</p>
+        </div>
+
+        <div id="lineChart"></div>
+
+      </div>
+
+      <!-- Quiz Status -->
+      <div class="chart-card chart-small">
+
+        <div class="chart-header">
+          <h2>🍩 Quiz Status</h2>
+          <p>Current quiz distribution</p>
+        </div>
+
+        <div id="pieChart"></div>
+
+      </div>
+
+    </div>
+
     <!-- === QUICK ACTIONS === -->
-    <div class="quick-actions">
+    <!-- <div class="quick-actions">
       <h2>⚡ Quick Actions</h2>
 
       <div class="actions-grid">
@@ -108,7 +140,7 @@ if (localStorage.getItem("loginStarted") !== "true") {
       </div>
     </div>
 
-  </div>
+  </div> -->
 </section>
 
 <section id="scoreboard" class="page">
@@ -355,6 +387,7 @@ ${data.gameId || "Unknown"}`,
 
 <!-- ✅ Load Socket.IO client BEFORE using io() -->
 <script src="http://192.168.1.77:8080/socket.io/socket.io.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 <script src="script.js"></script>
 <script src="app.js"></script>
 
@@ -754,6 +787,262 @@ async function loadDashboard() {
     );
 
 
+    // =====================================================
+// 📈 QUIZ ACTIVITY LINE CHART
+// =====================================================
+
+const lineChartElement =
+  document.getElementById("lineChart");
+
+if (lineChartElement) {
+
+  const lineChart =
+    echarts.init(lineChartElement);
+
+
+  const dates =
+    (data.activity || []).map(row => {
+
+      const date =
+        new Date(row.quizDate);
+
+      return date.toLocaleDateString(
+        undefined,
+        {
+          month: "short",
+          day: "numeric"
+        }
+      );
+
+    });
+
+
+  const created =
+    (data.activity || []).map(
+      row => Number(row.createdQuizzes || 0)
+    );
+
+
+  const active =
+    (data.activity || []).map(
+      row => Number(row.activeQuizzes || 0)
+    );
+
+
+  lineChart.setOption({
+
+    tooltip: {
+      trigger: "axis"
+    },
+
+
+    legend: {
+
+      data: [
+        "Created Quizzes",
+        "Active Quizzes"
+      ],
+
+      top: 5
+
+    },
+
+
+    grid: {
+
+      left: 45,
+      right: 20,
+      top: 50,
+      bottom: 40,
+      containLabel: true
+
+    },
+
+
+    xAxis: {
+
+      type: "category",
+
+      data: dates
+
+    },
+
+
+    yAxis: {
+
+      type: "value",
+
+      minInterval: 1
+
+    },
+
+
+    series: [
+
+      {
+        name: "Created Quizzes",
+
+        type: "line",
+
+        data: created,
+
+        smooth: true,
+
+        symbol: "circle",
+
+        symbolSize: 7
+      },
+
+
+      {
+        name: "Active Quizzes",
+
+        type: "line",
+
+        data: active,
+
+        smooth: true,
+
+        symbol: "circle",
+
+        symbolSize: 7
+      }
+
+    ]
+
+  });
+
+
+  // Store chart so we can resize it later
+  window.dashboardLineChart =
+    lineChart;
+
+}
+
+
+// =====================================================
+// 🍩 QUIZ STATUS DONUT CHART
+// =====================================================
+
+const pieChartElement =
+  document.getElementById("pieChart");
+
+if (pieChartElement) {
+
+  const pieChart =
+    echarts.init(pieChartElement);
+
+
+  const status =
+    data.statusDistribution || {};
+
+
+  const pieData =
+    Object.entries(status)
+      .map(([name, value]) => ({
+
+        name:
+          name.charAt(0).toUpperCase() +
+          name.slice(1),
+
+        value:
+          Number(value || 0)
+
+      }));
+
+
+  pieChart.setOption({
+
+    tooltip: {
+
+      trigger: "item",
+
+      formatter:
+        "{b}: {c} ({d}%)"
+
+    },
+
+
+    legend: {
+
+      orient: "horizontal",
+
+      bottom: 5
+
+    },
+
+
+    series: [
+
+      {
+
+        name: "Quizzes",
+
+        type: "pie",
+
+        radius: [
+          "45%",
+          "70%"
+        ],
+
+        avoidLabelOverlap: true,
+
+        itemStyle: {
+
+          borderRadius: 6,
+
+          borderColor: "#fff",
+
+          borderWidth: 2
+
+        },
+
+        label: {
+
+          show: true,
+
+          formatter:
+            "{b}\n{c}"
+
+        },
+
+        data: pieData
+
+      }
+
+    ]
+
+  });
+
+
+  window.dashboardPieChart =
+    pieChart;
+
+}
+
+
+// =====================================================
+// 📱 RESPONSIVE CHARTS
+// =====================================================
+
+window.addEventListener("resize", () => {
+
+  if (window.dashboardLineChart) {
+
+    window.dashboardLineChart.resize();
+
+  }
+
+
+  if (window.dashboardPieChart) {
+
+    window.dashboardPieChart.resize();
+
+  }
+
+});
+
+
     // ==========================================
     // UPDATE STAT CARDS
     // ==========================================
@@ -850,7 +1139,6 @@ async function loadDashboard() {
 
     }
 
-
     data.recentQuizzes.forEach(game => {
 
       const status =
@@ -907,8 +1195,10 @@ async function loadDashboard() {
           <button
             class="btn-start"
             data-game-id="${game.id}"
-            data-quiz-id="${game.auto_id}">
-            View
+            data-quiz-id="${game.auto_id}"
+            title="View quiz data"
+            aria-label="View quiz data">
+            <i class="fas fa-eye"></i>
           </button>
         </td>
 

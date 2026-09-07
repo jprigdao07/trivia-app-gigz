@@ -1117,7 +1117,61 @@ app.get('/api/dashboard', async (req, res) => {
 
 
     // =================================================
-    // 6. RESPONSE
+    // 6. QUIZ ACTIVITY OVER TIME
+    // =================================================
+    const [activityRows] = await db.execute(`
+      SELECT
+        DATE(created_at) AS quiz_date,
+
+        COUNT(*) AS created_quizzes,
+
+        SUM(
+          CASE
+            WHEN LOWER(status) IN ('active', 'live')
+            THEN 1
+            ELSE 0
+          END
+        ) AS active_quizzes
+
+      FROM games
+
+      WHERE created_at IS NOT NULL
+
+      GROUP BY DATE(created_at)
+
+      ORDER BY quiz_date ASC
+    `);
+
+
+    // =================================================
+    // 7. QUIZ STATUS DISTRIBUTION
+    // =================================================
+    const [statusRows] = await db.execute(`
+      SELECT
+        LOWER(status) AS status,
+        COUNT(*) AS total
+
+      FROM games
+
+      GROUP BY LOWER(status)
+    `);
+
+
+    // =================================================
+    // 8. FORMAT STATUS DISTRIBUTION
+    // =================================================
+    const statusDistribution = {};
+
+    statusRows.forEach(row => {
+
+      statusDistribution[row.status] =
+        Number(row.total || 0);
+
+    });
+
+
+    // =================================================
+    // 9. RESPONSE
     // =================================================
     res.json({
 
@@ -1139,27 +1193,61 @@ app.get('/api/dashboard', async (req, res) => {
 
       },
 
-      recentQuizzes: recentGames.map(game => ({
 
-        id: game.id,
+      // =================================================
+      // CHART DATA
+      // =================================================
 
-        auto_id: game.auto_id,
+      activity:
+        activityRows.map(row => ({
 
-        status: game.status,
+          quizDate:
+            row.quiz_date,
 
-        created_at: game.created_at,
+          createdQuizzes:
+            Number(row.created_quizzes || 0),
 
-        day: game.day,
+          activeQuizzes:
+            Number(row.active_quizzes || 0)
 
-        location: game.location,
+        })),
 
-        scheduled_start_at:
-          game.scheduled_start_at,
 
-        teamCount:
-          Number(game.team_count || 0)
+      statusDistribution,
 
-      }))
+
+      // =================================================
+      // RECENT QUIZZES
+      // =================================================
+
+      recentQuizzes:
+        recentGames.map(game => ({
+
+          id:
+            game.id,
+
+          auto_id:
+            game.auto_id,
+
+          status:
+            game.status,
+
+          created_at:
+            game.created_at,
+
+          day:
+            game.day,
+
+          location:
+            game.location,
+
+          scheduled_start_at:
+            game.scheduled_start_at,
+
+          teamCount:
+            Number(game.team_count || 0)
+
+        }))
 
     });
 
@@ -1186,7 +1274,13 @@ app.get('/api/dashboard', async (req, res) => {
 
 });
 
+
 const PORT = process.env.PORT || 8080;
+
 server.listen(PORT, () => {
-  console.log(`🚀 Socket.IO bridge running on http://localhost:${PORT}`);
+
+  console.log(
+    `🚀 Socket.IO bridge running on http://localhost:${PORT}`
+  );
+
 });
