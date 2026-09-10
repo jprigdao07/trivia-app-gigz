@@ -219,6 +219,7 @@ input {
   border-radius: var(--radius);
   padding: 20px;
   margin: auto;
+  width: 300px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -351,7 +352,6 @@ input {
 .stat-card {
   position: relative;
   overflow: hidden;
-
   background: #545454;
   border-radius: var(--radius);
   border: 1px solid #fdfcfa;
@@ -373,7 +373,7 @@ input {
   background:
     linear-gradient(
       to top,
-      rgba(255, 255, 255, 0.08),
+      rgb(106, 106, 106),
       transparent 100%
     );
 
@@ -421,7 +421,7 @@ input {
 }
 
 .stat-card p {
-  color: rgb(253, 253, 253);
+  color: rgb(11, 11, 11);
   font-weight: bold;
 }
 
@@ -1059,7 +1059,7 @@ input {
 
   background: linear-gradient(
     to top,
-    rgba(255, 255, 255, 0.08),
+    rgb(188, 187, 187),
     transparent 100%
   );
 
