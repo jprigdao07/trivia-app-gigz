@@ -219,6 +219,7 @@ input {
   border-radius: var(--radius);
   padding: 20px;
   margin: auto;
+  width: 300px;
   display: flex;
   align-items: center;
   gap: 12px;

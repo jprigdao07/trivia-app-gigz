@@ -95,7 +95,7 @@ function openScoringModal(team) {
       align-items: center;
       width: 100%;
     ">
-      <span>${team.scored ? `Edit Score: ${team.name}` : `Scoring: ${team.name}`}</span>
+      <span class="scoreText">${team.scored ? `Edit Score: ${team.name}` : `Scoring: ${team.name}`}</span>
       <button id="teamLeftBtn">Team Left</button>
     </div>
   `;

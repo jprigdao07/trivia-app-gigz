@@ -184,7 +184,7 @@
   <div id="scoringModal" class="modal">
   <div class="modal-content">
     <span class="close">&times;</span>
-    <h2 id="scoringTeamName"></h2>
+    <h2 id="scoringTeamName" class="scoreText"></h2>
     <div id="questionsList"></div>
     <!-- <button id="saveScoresBtn">Save Scores</button> -->
   </div>
@@ -252,6 +252,64 @@
       <h1>⚙️ Settings</h1>
       <p>Settings panel under development.</p>
     </section>
+  </div>
+</div>
+
+
+<!-- View Quiz Modal -->
+<div id="quizViewModal" class="quiz-modal">
+  <div class="quiz-modal-content">
+
+    <div class="quiz-modal-header">
+      <div>
+        <h2>Quiz Details</h2>
+        <p id="modalQuizTitle">Quiz #---</p>
+      </div>
+
+      <button
+        type="button"
+        class="quiz-modal-close"
+        id="closeQuizModal">
+        &times;
+      </button>
+    </div>
+
+    <div class="quiz-modal-info">
+      <div class="info-box">
+        <span>Quiz ID</span>
+        <strong id="modalQuizId">---</strong>
+      </div>
+
+      <div class="info-box">
+        <span>Game ID</span>
+        <strong id="modalGameId">---</strong>
+      </div>
+
+      <div class="info-box">
+        <span>Total Teams</span>
+        <strong id="modalTeamCount">0</strong>
+      </div>
+    </div>
+
+    <div class="quiz-modal-body">
+      <h3>Teams & Scores</h3>
+
+      <div class="teams-table-wrapper">
+        <table class="teams-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Team</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+
+          <tbody id="modalTeamsBody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -1303,14 +1361,59 @@ async function viewGame(gameId, quizId) {
     window.selectedQuizId = quizId;
     window.selectedQuizTeams = data.teams;
 
-    // Temporary test
-    alert(
-      `Quiz #${quizId}\n\n` +
-      `Teams: ${data.teams.length}\n\n` +
-      data.teams.map(team =>
-        `${team.team_name}: ${team.score}`
-      ).join("\n")
-    );
+    // ==========================
+    // Populate Modal
+    // ==========================
+
+    document.getElementById("modalQuizTitle").textContent =
+      `Quiz #${quizId}`;
+
+    document.getElementById("modalQuizId").textContent =
+      quizId;
+
+    document.getElementById("modalGameId").textContent =
+      gameId;
+
+    document.getElementById("modalTeamCount").textContent =
+      data.teams.length;
+
+    const teamsBody =
+      document.getElementById("modalTeamsBody");
+
+    teamsBody.innerHTML = "";
+
+    if (!data.teams || data.teams.length === 0) {
+
+      teamsBody.innerHTML = `
+        <tr>
+          <td colspan="3" style="text-align:center;">
+            No teams found.
+          </td>
+        </tr>
+      `;
+
+    } else {
+
+      data.teams.forEach((team, index) => {
+
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${team.team_name || "Unnamed Team"}</td>
+          <td>${team.score ?? 0}</td>
+        `;
+
+        teamsBody.appendChild(row);
+
+      });
+
+    }
+
+    // Show modal
+    document
+      .getElementById("quizViewModal")
+      .classList.add("show");
 
   } catch (error) {
 
@@ -1319,13 +1422,41 @@ async function viewGame(gameId, quizId) {
       error
     );
 
-    alert(
-      "Failed to load quiz data."
-    );
+    alert("Failed to load quiz data.");
 
   }
 
 }
+
+const quizViewModal =
+  document.getElementById("quizViewModal");
+
+const closeQuizModal =
+  document.getElementById("closeQuizModal");
+
+closeQuizModal.addEventListener("click", () => {
+  quizViewModal.classList.remove("show");
+});
+
+quizViewModal.addEventListener("click", (event) => {
+
+  if (event.target === quizViewModal) {
+    quizViewModal.classList.remove("show");
+  }
+
+});
+
+
+document.addEventListener("keydown", (event) => {
+
+  if (
+    event.key === "Escape" &&
+    quizViewModal.classList.contains("show")
+  ) {
+    quizViewModal.classList.remove("show");
+  }
+
+});
 </script>
 
 </body>

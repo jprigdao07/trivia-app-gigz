@@ -572,15 +572,10 @@ input {
 .modal-content {
   width: 90%;
   max-width: 400px;
-
   background: white;
-
   border-radius: var(--radius);
-
   padding: 24px;
-
   position: relative;
-
   box-shadow: var(--shadow-md);
 }
 
@@ -591,10 +586,8 @@ input {
 .modal-content input {
   width: 100%;
   padding: 12px;
-
   border: 1px solid var(--border);
   border-radius: 10px;
-
   margin-bottom: 20px;
 }
 
@@ -815,6 +808,11 @@ input {
       margin: 0 0 20px;
       font-size: 1.2rem;
       color: #e36a00;
+    }
+    .scoreText {
+      margin: 0 0 20px;
+      font-size: 1.2rem;
+      color: #1b1b1b;
     }
     .controls {
       margin-bottom: 20px;
@@ -1171,6 +1169,221 @@ input {
 
     height: 300px;
 
+  }
+
+}
+
+
+.mark {
+  color: orangered;
+  background: white;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.mark:hover {
+  transform: scale(1.15);
+  background: #f0f0f0;
+}
+
+.mark.incorrect {
+  color: red;
+}
+
+.mark.correct:hover {
+  color: darkorange;
+  transform: scale(1.15);
+  background-color: #494949;
+}
+
+.mark.incorrect:hover {
+  color: darkred;
+  transform: scale(1.15);
+  background-color: #494949;
+}
+
+.quiz-modal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.quiz-modal.show {
+  display: flex;
+}
+
+.quiz-modal-content {
+  width: min(700px, 100%);
+  max-height: 85vh;
+  background: #888787;
+  color: #222;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  animation: quizModalOpen 0.2s ease;
+}
+
+@keyframes quizModalOpen {
+  from {
+    opacity: 0;
+    transform: translateY(-15px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+
+.quiz-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.quiz-modal-header h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.quiz-modal-header p {
+  margin: 4px 0 0;
+  color: #055285;
+  font-size: 14px;
+}
+
+.quiz-modal-close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: #f1f1f1;
+  color: #444;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.quiz-modal-close:hover {
+  background: #e0e0e0;
+  transform: rotate(90deg);
+}
+
+
+.quiz-modal-info {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 20px 24px;
+}
+
+.info-box {
+  padding: 14px;
+  background: #f7f7f7;
+  border-radius: 10px;
+  border: 1px solid #e8e8e8;
+}
+
+.info-box span {
+  display: block;
+  font-size: 12px;
+  color: #777;
+  margin-bottom: 5px;
+}
+
+.info-box strong {
+  display: block;
+  font-size: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+.quiz-modal-body {
+  padding: 0 24px 24px;
+}
+
+.quiz-modal-body h3 {
+  margin: 0 0 12px;
+  font-size: 17px;
+}
+
+.teams-table-wrapper {
+  max-height: 350px;
+  overflow-y: auto;
+  border: 1px solid #2e2e2e;
+  border-radius: 10px;
+}
+
+.teams-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.teams-table th {
+  position: sticky;
+  top: 0;
+  background: #0b0b0b;
+  padding: 12px;
+  text-align: left;
+  font-size: 13px;
+  color: whitesmoke;
+}
+
+.teams-table td {
+  padding: 12px;
+  border-top: 1px solid #eeeeee;
+  font-size: 14px;
+}
+
+.teams-table th:first-child,
+.teams-table td:first-child {
+  width: 50px;
+  text-align: center;
+}
+
+.teams-table th:last-child,
+.teams-table td:last-child {
+  width: 100px;
+  text-align: center;
+}
+
+.teams-table tbody tr:hover {
+  background: #f8f8f8;
+}
+
+@media (max-width: 600px) {
+
+  .quiz-modal {
+    padding: 10px;
+  }
+
+  .quiz-modal-content {
+    max-height: 90vh;
+  }
+
+  .quiz-modal-info {
+    grid-template-columns: 1fr;
+    padding: 15px;
+  }
+
+  .quiz-modal-header {
+    padding: 16px;
+  }
+
+  .quiz-modal-body {
+    padding: 0 15px 15px;
   }
 
 }
