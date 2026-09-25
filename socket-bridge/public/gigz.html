@@ -171,9 +171,6 @@
       <label for="newTeamName">Team Name</label>
       <input type="text" id="newTeamName" placeholder="Enter team name">
 
-      <!-- <label for="teamLocation">Location</label>
-      <input type="text" id="teamLocation" placeholder="Enter location (e.g., Cebu City)">
- -->
       <div class="modal-actions">
         <button id="saveTeamBtn">Save</button>
         <button id="cancelTeamBtn" class="cancel">Cancel</button>
@@ -183,7 +180,7 @@
 
   <div id="scoringModal" class="modal">
   <div class="modal-content">
-    <span class="close">&times;</span>
+    <span class="close"></span>
     <h2 id="scoringTeamName" class="scoreText"></h2>
     <div id="questionsList"></div>
     <!-- <button id="saveScoresBtn">Save Scores</button> -->
@@ -828,7 +825,7 @@ async function loadDashboard() {
   try {
 
     const response = await fetch(
-      "http://localhost:8080/api/dashboard"
+      "/api/dashboard"
     );
 
     console.log(
@@ -1335,7 +1332,7 @@ async function viewGame(gameId, quizId) {
   try {
 
     const response = await fetch(
-      `http://localhost:8080/api/quiz-data?quiz_id=${quizId}`
+      `/api/quiz-data?quiz_id=${quizId}`
     );
 
     console.log(

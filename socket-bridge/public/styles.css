@@ -571,7 +571,7 @@ input {
 
 .modal-content {
   width: 90%;
-  max-width: 400px;
+  max-width: 350px;
   background: white;
   border-radius: var(--radius);
   padding: 24px;
@@ -1180,6 +1180,7 @@ input {
   border: none;
   cursor: pointer;
   transition: 0.2s ease;
+  padding: 10px;
 }
 
 .mark:hover {
