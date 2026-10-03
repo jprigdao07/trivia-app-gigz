@@ -390,7 +390,7 @@ socket.on("slave:quiz_ready", (payload) => {
     console.log(`📢 ${socket.id} joined game room: game:${gameId}`);
   });
 
-  socket.on('display:page_type', ({ pageType }) => {
+  socket.on('display:page_type', ({ pageType, roundNumber }) => {
   const { gameId, role } = socket.handshake.auth || {};
 
   if (!gameId) {
@@ -398,11 +398,12 @@ socket.on("slave:quiz_ready", (payload) => {
     return;
   }
 
-  console.log('📄 Page type:', pageType, 'Game:', gameId);
+  console.log('📄 Page type:', pageType, 'Round:', roundNumber, 'Game:', gameId);
 
   // Send to all other clients in this game (controller + displays)
   socket.to(`game:${gameId}`).emit('display:page_type', {
-    pageType
+    pageType,
+    roundNumber
   });
 });
 

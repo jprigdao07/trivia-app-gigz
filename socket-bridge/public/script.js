@@ -347,10 +347,17 @@ socket.on("connect", () => {
 });
 
 // Listener for page updates
-socket.on("display:page_type", ({ pageType }) => {
+socket.on("display:page_type", ({ pageType, roundNumber }) => {
   console.log("📡 Controller received page type:", pageType);
+  console.log("📚 Controller received round:", roundNumber);
 
   window.currentPageType = pageType;
+
+
+    // Update current round display
+  if (roundNumber) {
+    loadCurrentRound(window.currentGameId, roundNumber - 1);
+  }
 
   // Optional: keep PAGE_FLOW index in sync
   const index = PAGE_FLOW.indexOf(pageType);
@@ -876,6 +883,9 @@ if (!location) {
 
     window.currentGameId = newGameId;
     localStorage.setItem("currentGameId", newGameId);
+    console.log("🟢 GAME ID SAVED:", newGameId);
+
+    loadCurrentRound(newGameId, 0);
 
     const gameIdInput = document.getElementById("gameIdInput");
     if (gameIdInput) gameIdInput.value = newGameId;
@@ -1059,6 +1069,10 @@ document.getElementById("startNowBtn")?.addEventListener("click", async () => {
     // 1️⃣1️⃣ Update state & notify
     window.currentGameId = newGameId;
     localStorage.setItem("currentGameId", newGameId);
+    console.log("🟢 GAME ID SAVED:", newGameId);
+
+    loadCurrentRound(newGameId, 0);
+
     const gameIdInput = document.getElementById("gameIdInput");
     if (gameIdInput) gameIdInput.value = newGameId;
 
@@ -1110,11 +1124,29 @@ function showSection(sectionId) {
   });
 
   const target = document.getElementById(sectionId);
+
   if (target) {
     target.classList.add("active");
     target.style.display = "block";
-    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    target.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+
     console.log("✅ Switched to section:", sectionId);
+
+    // Load current round when Scoreboard is displayed
+    if (sectionId === "scoreboard") {
+      const gameId =
+        window.currentGameId ||
+        localStorage.getItem("currentGameId");
+
+      console.log("🎯 Scoreboard game ID:", gameId);
+
+      if (!gameId) {
+        console.warn("⚠️ No current game ID available");
+      }
+    }
   }
 }
 
@@ -1980,6 +2012,10 @@ document.getElementById("readyStartBtn")?.addEventListener("click", async () => 
     // 3️⃣ Update controller state
     window.currentGameId = newGameId;
     localStorage.setItem("currentGameId", newGameId);
+    console.log("🟢 GAME ID SAVED:", newGameId);
+
+    loadCurrentRound(newGameId, 0);
+
     const gameIdInput = document.getElementById("gameIdInput");
     if (gameIdInput) gameIdInput.value = newGameId;
 
@@ -2302,3 +2338,48 @@ async function getLatestActiveQuizId() {
   }
 }
 
+async function loadCurrentRound(gameId, roundIndex = 0) {
+    const display = document.getElementById("currentRoundDisplay");
+
+    if (!display) {
+        console.warn("⚠️ #currentRoundDisplay not found");
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            `http://192.168.1.77:4001/api/quiz/${gameId}`
+        );
+
+        if (!response.ok) {
+            throw new Error(`Quiz API returned ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Only use rounds that contain actual questions
+        const rounds = data.rounds.filter(
+            round => round.questions && round.questions.length > 0
+        );
+
+        const currentRound = rounds[roundIndex];
+
+        if (!currentRound) {
+            display.textContent = "Round not found.";
+            return;
+        }
+
+        display.textContent =
+            `Round ${currentRound.round_number}: ${currentRound.category}`;
+
+        console.log(
+            "🎯 Current round:",
+            currentRound.round_number,
+            currentRound.category
+        );
+
+    } catch (error) {
+        console.error("❌ Failed to load current round:", error);
+        display.textContent = "Unable to load round.";
+    }
+}

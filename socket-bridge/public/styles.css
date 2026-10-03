@@ -1388,3 +1388,15 @@ input {
   }
 
 }
+
+.rounds-panel h1{
+  text-align: center;
+  color: #ee1515;
+}
+
+#currentRoundDisplay {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 15px;
+}
