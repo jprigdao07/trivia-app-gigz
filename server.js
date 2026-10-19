@@ -11,8 +11,108 @@ const fs = require('fs');
 const http = require('http');
 const { Server } = require('socket.io');
 const { io: Client } = require("socket.io-client");
+const session = require('express-session');
+const MySQLStore = require('express-mysql-session')(session);
 
 const app = express();
+
+// =============================================
+// Quiz App Authentication Sessions
+// =============================================
+
+if (!process.env.SESSION_SECRET) {
+  throw new Error(
+    'SESSION_SECRET is missing from the Quiz App .env file.'
+  );
+}
+
+const sessionStore = new MySQLStore({
+  host: process.env.DB_HOST || 'localhost',
+  port: Number(process.env.DB_PORT || 3306),
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASS || '',
+  database: process.env.DB_NAME || 'trivia_quiz_app',
+
+  schema: {
+    tableName: 'quiz_app_sessions'
+  },
+
+  createDatabaseTable: true,
+  clearExpired: true,
+  checkExpirationInterval: 15 * 60 * 1000,
+  expiration: 8 * 60 * 60 * 1000
+});
+
+app.use(session({
+  name: 'quizapp.sid',
+  secret: process.env.SESSION_SECRET,
+  store: sessionStore,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'lax',
+    maxAge: 8 * 60 * 60 * 1000
+  }
+}));
+
+
+app.post('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('❌ Logout error:', err);
+
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to log out'
+      });
+    }
+
+    res.clearCookie('quizapp.sid');
+
+    res.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+  });
+});
+
+
+/* =============================================
+   Protect Quiz App Admin Pages
+   ============================================= */
+
+app.use((req, res, next) => {
+  const protectedPages = [
+    '/dashboard.html',
+    '/quizzes_tab.html',
+    '/questionstab.html',
+    '/venues.html'
+  ];
+
+  // Allow the SBC/TV display to access quizzes_tab.html
+  // without requiring an admin login session.
+  if (
+    req.path === '/quizzes_tab.html' &&
+    req.query.device === 'sbc'
+  ) {
+    return next();
+  }
+
+  // Only protect the pages listed above
+  if (!protectedPages.includes(req.path)) {
+    return next();
+  }
+
+  // Require login for normal access
+  if (!req.session || !req.session.user) {
+    return res.redirect('/login.html');
+  }
+
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 const PORT = process.env.PORT || 4001 ;
@@ -200,6 +300,234 @@ const storage = multer.diskStorage({
   }
 });
 const upload = multer({ storage: storage });
+
+
+
+/* =============================================
+   Quiz App Authentication API
+   ============================================= */
+
+// Check whether a Quiz App account has an active session.
+app.get('/api/auth/me', (req, res) => {
+  if (!req.session?.user) {
+    return res.status(401).json({
+      authenticated: false,
+      message: 'Please sign in.'
+    });
+  }
+
+  res.json({
+    authenticated: true,
+    user: req.session.user
+  });
+});
+
+// Sign in with username or email and password.
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const username = String(req.body?.username || '').trim();
+    const password = req.body?.password;
+
+    if (
+      !username ||
+      typeof password !== 'string' ||
+      !password ||
+      username.length > 255 ||
+      password.length > 1024
+    ) {
+      return res.status(400).json({
+        message: 'Please enter your username/email and password.'
+      });
+    }
+
+    const [rows] = await db.execute(
+      `SELECT id, username, email, password_hash, role, is_active
+       FROM users
+       WHERE username = ? OR email = ?
+       LIMIT 1`,
+      [username, username]
+    );
+
+    const user = rows[0];
+
+    // Use a generic message for invalid credentials or inactive accounts.
+    if (!user || Number(user.is_active) !== 1) {
+      return res.status(401).json({
+        message: 'Invalid username/email or password.'
+      });
+    }
+
+    const passwordMatches = await bcrypt.compare(
+      password,
+      user.password_hash
+    );
+
+    if (!passwordMatches) {
+      return res.status(401).json({
+        message: 'Invalid username/email or password.'
+      });
+    }
+
+    // Regenerate the session ID after successful authentication.
+    req.session.regenerate((err) => {
+      if (err) {
+        console.error('Session regeneration failed:', err.message);
+        return res.status(500).json({
+          message: 'Unable to sign in right now. Please try again.'
+        });
+      }
+
+      req.session.user = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role
+      };
+
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error('Session save failed:', saveErr.message);
+          return res.status(500).json({
+            message: 'Unable to complete sign-in. Please try again.'
+          });
+        }
+
+        return res.json({
+          message: 'Login successful',
+          user: req.session.user
+        });
+      });
+    });
+  } catch (error) {
+    console.error('Quiz App login error:', error.message);
+
+    res.status(500).json({
+      message: 'A server error occurred. Please try again.'
+    });
+  }
+});
+
+
+
+/* Register a new Quiz App account */
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const username = String(req.body?.username || '').trim();
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const password = req.body?.password;
+    const confirmPassword = req.body?.confirmPassword;
+
+    // Validate required fields.
+    if (
+      !username ||
+      !email ||
+      typeof password !== 'string' ||
+      typeof confirmPassword !== 'string'
+    ) {
+      return res.status(400).json({
+        message: 'Please complete all required fields.'
+      });
+    }
+
+    if (username.length < 3 || username.length > 100) {
+      return res.status(400).json({
+        message: 'Username must be between 3 and 100 characters.'
+      });
+    }
+
+    if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+      email.length > 255
+    ) {
+      return res.status(400).json({
+        message: 'Please enter a valid email address.'
+      });
+    }
+
+    if (password.length < 8 || password.length > 72) {
+      return res.status(400).json({
+        message: 'Password must be between 8 and 72 characters.'
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        message: 'Passwords do not match.'
+      });
+    }
+
+    // Check for an existing username or email.
+    const [existingUsers] = await db.execute(
+      `SELECT id
+       FROM users
+       WHERE username = ? OR email = ?
+       LIMIT 1`,
+      [username, email]
+    );
+
+    if (existingUsers.length > 0) {
+      return res.status(409).json({
+        message: 'That username or email is already registered.'
+      });
+    }
+
+    // Hash the password before saving it.
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    // Public registration must never create administrator accounts.
+    await db.execute(
+      `INSERT INTO users
+       (username, email, password_hash, role, is_active)
+       VALUES (?, ?, ?, 'host', 1)`,
+      [username, email, passwordHash]
+    );
+
+    return res.status(201).json({
+      message: 'Account created successfully. You can now sign in.'
+    });
+
+  } catch (error) {
+    // Handle duplicate-key conflicts, including simultaneous registrations.
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({
+        message: 'That username or email is already registered.'
+      });
+    }
+
+    console.error('Quiz App registration error:', error.message);
+
+    return res.status(500).json({
+      message: 'Unable to create your account right now. Please try again.'
+    });
+  }
+});
+
+
+// Sign out of the Quiz App only.
+app.post('/api/auth/logout', (req, res) => {
+  if (!req.session) {
+    return res.json({ message: 'Signed out successfully.' });
+  }
+
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Session destruction failed:', err.message);
+      return res.status(500).json({
+        message: 'Unable to sign out. Please try again.'
+      });
+    }
+
+    res.clearCookie('quizapp.sid', {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/'
+    });
+
+    res.json({ message: 'Signed out successfully.' });
+  });
+});
+
 
 //Dashboard
 app.get("/dashboard-data", async (req, res) => {
