@@ -13,11 +13,18 @@ const ALLOWED_ORIGINS = [
   'http://localhost:4001',
   'http://localhost:8080',
   "https://localhost:8080",
+  'http://127.0.0.1:3000',
   'http://localhost:3000',
   'http://192.168.1.77:8080',
   'http://192.168.1.77:3000',
   'http://192.168.1.77:4001',
-  "https://192.168.1.77:8081"
+  "https://192.168.1.77:8081",
+
+
+  
+    // React Quiz Display on KickPi
+  'http://127.0.0.1:4173',
+  'http://localhost:4173'
 ];
 const CONTROLLER_SECRET = 'secret123';
 

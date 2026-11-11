@@ -240,32 +240,74 @@ socket?.on("display:page_type", ({ pageType }) => {
 // ===============================
 // 🏆 HANDLE TEAM SCORING
 // ===============================
-async function saveTeamAnswer(teamId, questionIndex, correct) {
+async function saveTeamAnswer(teamId, roundIndex, questionIndex, correct) {
   try {
-    const roundIndex = window.currentRoundIndex;
-
-    // POST answer to backend
     const res = await fetch("/api/team-answers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ team_id: teamId, round_index: roundIndex, question_index: questionIndex, correct })
+      body: JSON.stringify({
+        team_id: teamId,
+        round_index: roundIndex,
+        question_index: questionIndex,
+        correct: correct
+      })
     });
-    const data = await res.json();
-    if (!data.success) return console.error("❌ Failed to save answer");
 
-    // Load all answers for this team in this round
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      console.error("❌ Failed to save answer:", data);
+      return false;
+    }
+
     const answers = await loadTeamRoundAnswers(teamId, roundIndex);
 
-    // Mark team scored if all questions answered
-    const totalQuestions = 3; // or dynamically
-    if (Object.keys(answers).length === totalQuestions) {
-      markTeamScored(teamId);
+    const answeredIndexes = new Set(
+      answers.map(answer => Number(answer.question_index))
+    );
+
+    const allQuestionsAnswered = [0, 1, 2].every(index =>
+      answeredIndexes.has(index)
+    );
+
+    console.log("🔍 Answer completion:", {
+      teamId,
+      roundIndex,
+      questionIndex,
+      correct,
+      answeredIndexes: [...answeredIndexes],
+      allQuestionsAnswered
+    });
+
+if (allQuestionsAnswered) {
+  const alreadyScored =
+    window.roundScores?.[roundIndex]?.[teamId] === true;
+
+  // Mark the team as scored locally.
+  markTeamScored(teamId, roundIndex);
+
+  // Broadcast the team's completion to the Controller.
+    if (!alreadyScored) {
+      const team = window.teams.find(
+        t => Number(t.id) === Number(teamId)
+      );
+
+      if (team) {
+        broadcastScore(team);
+        console.log(
+          `📡 Broadcasted completed team: ${team.name} | Round ${roundIndex}`
+        );
+      }
     }
+  }
+
+    return true;
+
   } catch (err) {
     console.error("❌ SaveTeamAnswer error:", err);
+    return false;
   }
 }
-
 
 // Broadcast the updated score to other clients
 function broadcastScore(team) {
@@ -305,9 +347,15 @@ async function updateTeamScore(teamId, score) {
 }
 
 function isCurrentRoundScored() {
-  const round = window.roundScores[window.currentRoundIndex];
-  if (!round) return false;
-  return Object.values(round).every(v => v === true);
+  const round = window.roundScores?.[window.currentRoundIndex];
+
+  if (!round || !Array.isArray(window.teams)) return false;
+
+  const activeTeams = window.teams.filter(team => !team.left);
+
+  if (activeTeams.length === 0) return false;
+
+  return activeTeams.every(team => round[team.id] === true);
 }
 
 // === FETCH & CONNECT CONTROLLER ===

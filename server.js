@@ -122,6 +122,8 @@ const { v4: uuidv4 } = require('uuid');
 
 
 const ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
   'http://localhost:8080',       // controller on PC
   'http://127.0.0.1:8080',       // controller on PC
   'http://192.168.1.77:8080', // controller from phone or SBC
@@ -241,6 +243,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors({
   origin: function (origin, callback) {
     const allowedOrigins = [
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
       "http://localhost:8080",
       "https://localhost:8080",
       "http://localhost:4001",
@@ -248,7 +252,12 @@ app.use(cors({
       "http://127.0.0.1:4001",
       "http://192.168.1.77:8080",
       "http://192.168.1.77:4001",
-      "https://192.168.1.77:8081"
+      "https://192.168.1.77:8081",
+
+
+      // React Quiz Display on KickPi
+      "http://127.0.0.1:4173",
+      "http://localhost:4173"
     ];
 
     // allow non-browser requests (Postman, curl)
